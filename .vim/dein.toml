@@ -1,0 +1,11 @@
+[[plugins]]
+repo = 'Shougo/dein.vim'
+
+# Toml
+[[plugins]]
+repo  = 'cespare/vim-toml'
+
+[[plugins]]
+repo = 'jiangmiao/auto-pairs'
+on_i = 1
+

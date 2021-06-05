@@ -18,6 +18,8 @@ export PATH=/usr/local/bin:$PATH
 # bat settings
 if [[ $(command -v bat) ]]; then
         alias cat='bat'
+elif [[ $(command -v batcat) ]]; then
+  alias cat="batcat"
 fi
 # exa settings
 if [[ $(command -v exa) ]]; then

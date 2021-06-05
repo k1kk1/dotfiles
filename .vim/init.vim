@@ -112,3 +112,5 @@ set hlsearch
 " ESC連打でハイライト解除
 nmap <Esc><Esc> :nohlsearch<CR><Esc>
 "
+
+set t_Co=256

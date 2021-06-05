@@ -25,3 +25,6 @@
 	added = yellow
 	changed = green
 	untracked = cyan
+[user]
+	email = kikkidev64@gmail.com
+	name = kikkidev64

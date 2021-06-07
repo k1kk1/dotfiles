@@ -113,4 +113,5 @@ set hlsearch
 nmap <Esc><Esc> :nohlsearch<CR><Esc>
 "
 
+set mouse=a
 set t_Co=256

@@ -43,3 +43,6 @@ elif [[ $(command -v vim) ]]; then
         alias vi='vim'
 fi
 
+# anyenv settings
+export PATH="$HOME/.anyenv/bin:$PATH"
+eval "$(anyenv init -)"

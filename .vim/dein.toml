@@ -1,7 +1,15 @@
 [[plugins]]
 repo = 'Shougo/dein.vim'
 
-# Toml
+[[plugins]]
+repo = 'Shougo/vimproc.vim'
+
+[[plugins]]
+repo = 'jiangmiao/auto-pairs'
+
+[[plugins]]
+repo = 'chase/vim-ansible-yaml'
+
 [[plugins]]
 repo  = 'cespare/vim-toml'
 
@@ -13,13 +21,19 @@ source ~/.config/nvim/plugins/defx.rc.vim
 """
 
 [[plugins]]
+repo = 'ryanoasis/vim-devicons'
+
+[[plugins]]
+repo = 'kristijanhusak/defx-icons'
+
+[[plugins]]
+repo = 'kristijanhusak/defx-git'
+
+[[plugins]]
 repo = 'Shougo/denite.nvim'
 hook_add = """
 source ~/.config/nvim/plugins/denite.rc.vim
 """
-
-[[plugins]]
-repo = 'jiangmiao/auto-pairs'
 
 [[plugins]]
 repo = "neoclide/coc.nvim"

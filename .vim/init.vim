@@ -50,7 +50,7 @@ set mouse=a
 set t_Co=256
 set number
 set cursorline
-set cursorcolumn
+"set cursorcolumn
 set virtualedit=onemore
 set smartindent
 set visualbell

@@ -1,33 +1,14 @@
 [[plugins]]
 repo = 'Shougo/dein.vim'
 
-# Toml
 [[plugins]]
-repo  = 'cespare/vim-toml'
-
-[[plugins]]
-repo = 'Shougo/defx.nvim'
-depends = ['defx-git', 'defx-icons']
-hook_add = """
-source ~/.config/nvim/plugins/defx.rc.vim
-"""
-
-[[plugins]]
-repo = 'Shougo/denite.nvim'
-hook_add = """
-source ~/.config/nvim/plugins/denite.rc.vim
-"""
+repo = 'Shougo/vimproc.vim'
 
 [[plugins]]
 repo = 'jiangmiao/auto-pairs'
 
 [[plugins]]
-repo = "neoclide/coc.nvim"
-merge = 0
-rev = "release"
-hook_add = """
-source ~/.config/nvim/plugins/coc.rc.vim
-"""
+repo  = 'cespare/vim-toml'
 
 [[plugins]]
 repo = "peitalin/vim-jsx-typescript"

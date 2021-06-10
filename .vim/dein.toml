@@ -8,43 +8,7 @@ repo = 'Shougo/vimproc.vim'
 repo = 'jiangmiao/auto-pairs'
 
 [[plugins]]
-repo = 'chase/vim-ansible-yaml'
-hook_add = """
-source ~/.config/nvim/plugins/vim-ansible-yaml.rc.vim
-"""
-
-[[plugins]]
 repo  = 'cespare/vim-toml'
-
-[[plugins]]
-repo = 'Shougo/defx.nvim'
-depends = ['defx-git', 'defx-icons']
-hook_add = """
-source ~/.config/nvim/plugins/defx.rc.vim
-"""
-
-[[plugins]]
-repo = 'ryanoasis/vim-devicons'
-
-[[plugins]]
-repo = 'kristijanhusak/defx-icons'
-
-[[plugins]]
-repo = 'kristijanhusak/defx-git'
-
-[[plugins]]
-repo = 'Shougo/denite.nvim'
-hook_add = """
-source ~/.config/nvim/plugins/denite.rc.vim
-"""
-
-[[plugins]]
-repo = "neoclide/coc.nvim"
-merge = 0
-rev = "release"
-hook_add = """
-source ~/.config/nvim/plugins/coc.rc.vim
-"""
 
 [[plugins]]
 repo = "peitalin/vim-jsx-typescript"

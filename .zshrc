@@ -25,7 +25,7 @@ fi
 if [[ $(command -v exa) ]]; then
         alias exa="exa --icons"
         alias ls="exa"
-        alias ll="exa -al"
+        alias ll="exa -al --git"
         alias lla="exa -aal"
         alias lt='exa -T -L 3 -a -I "node_modules|.git|.cache" --icons'
         alias lt='exa -T -a -I "node_modules|.git|.cache" --color=always --icons | less -r'

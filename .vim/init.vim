@@ -46,8 +46,23 @@ set autoread
 set hidden
 set showcmd
 set mouse=a
+" statusline
+set statusline=%F%m%h%w\ %<[ENC=%{&fenc!=''?&fenc:&enc}]\ [FMT=%{&ff}]\ [TYPE=%Y]\ %=[CODE=0x%02B]\ [POS=%l/%L(%02v)]
+set laststatus=2
+" paste
+if &term =~ "xterm"
+  let &t_SI .= "\e[?2004h"
+  let &t_EI .= "\e[?2004l"
+  let &pastetoggle = "\e[201~"
+
+  function XTermPasteBegin(ret)
+    set paste
+    return a:ret
+  endfunction
+
+  inoremap <special> <expr> <Esc>[200~ XTermPasteBegin("")
+endif 
 " 見た目
-set t_Co=256
 set number
 set cursorline
 "set cursorcolumn
@@ -55,7 +70,6 @@ set virtualedit=onemore
 set smartindent
 set visualbell
 set showmatch
-set laststatus=2
 set wildmode=list:longest
 syntax enable
 " Indent width

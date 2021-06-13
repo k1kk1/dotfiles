@@ -8,7 +8,7 @@ repo = 'Shougo/vimproc.vim'
 repo = 'jiangmiao/auto-pairs'
 
 [[plugins]]
-repo  = 'cespare/vim-toml'
-
-[[plugins]]
-repo = "peitalin/vim-jsx-typescript"
+repo = 'itchyny/lightline.vim'
+hook_add = '''
+source ~/.config/nvim/plugins/lightline.rc.vim
+'''

@@ -1,31 +1,6 @@
 " Defx settings
-"autocmd VimEnter * execute 'Defx'
-nnoremap <silent> <Leader>f :<C-u> Defx <CR>
-
 autocmd BufWritePost * call defx#redraw()
 autocmd BufEnter * call defx#redraw()
-
-call defx#custom#option('_', {
- \ 'winwidth': 40,
-  \ 'split': 'vertical',
-  \ 'direction': 'topleft',
-  \ 'show_ignored_files': 1,
-  \ 'buffer_name': 'exproler',
-  \ 'toggle': 1,
-  \ 'resume': 1,
-  \ 'columns': 'indent:git:icons:filename:mark',
-  \ }) 
-
-call defx#custom#column('git', 'indicators', {
-  \ 'Modified'  : '✹',
-  \ 'Staged'    : '✚',
-  \ 'Untracked' : '✭',
-  \ 'Renamed'   : '➜',
-  \ 'Unmerged'  : '═',
-  \ 'Ignored'   : '☒',
-  \ 'Deleted'   : '✖',
-  \ 'Unknown'   : '?'
-  \ })
 
 
 autocmd FileType defx call s:defx_my_settings()

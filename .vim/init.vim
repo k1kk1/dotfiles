@@ -65,6 +65,7 @@ endif
 " 見た目
 set number
 set cursorline
+set noshowmode
 "set cursorcolumn
 set virtualedit=onemore
 set smartindent

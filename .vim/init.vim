@@ -74,6 +74,9 @@ set wildmode=list:longest
 syntax enable
 " tab
 set list listchars=tab:\▸\-
+set expandtab
+set tabstop=2
+set shiftwidth=2
 " Indent width
 if has("autocmd")
   "ファイルタイプの検索を有効にする

@@ -89,3 +89,5 @@ eval "$(anyenv init -)"
 #
 export PATH=/usr/bin:$PATH
 export PATH=/usr/local/bin:$PATH
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

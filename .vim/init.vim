@@ -47,7 +47,6 @@ set hidden
 set showcmd
 set mouse=a
 " statusline
-set statusline=%F%m%h%w\ %<[ENC=%{&fenc!=''?&fenc:&enc}]\ [FMT=%{&ff}]\ [TYPE=%Y]\ %=[CODE=0x%02B]\ [POS=%l/%L(%02v)]
 set laststatus=2
 " paste
 if &term =~ "xterm"
@@ -73,6 +72,8 @@ set visualbell
 set showmatch
 set wildmode=list:longest
 syntax enable
+" tab
+set list listchars=tab:\▸\-
 " Indent width
 if has("autocmd")
   "ファイルタイプの検索を有効にする
@@ -96,11 +97,6 @@ if has("autocmd")
   autocmd FileType sass        setlocal sw=4 sts=4 ts=4 et
   autocmd FileType javascript  setlocal sw=4 sts=4 ts=4 et
 endif
-" tab
-set list listchars=tab:\▸\-
-set expandtab
-set tabstop=2
-set shiftwidth=2
 " search
 set ignorecase
 set smartcase

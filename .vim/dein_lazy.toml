@@ -1,4 +1,5 @@
 [[plugins]]
+rtp = ''
 repo = 'elzr/vim-json'
 on_ft = ['json']
 
@@ -13,36 +14,16 @@ on_ft = ['javascript', 'javascript.jsx']
 [[plugins]]
 repo = 'chase/vim-ansible-yaml'
 hook_add = """
-source ~/.config/nvim/plugins/vim-ansible-yaml.rc.vim
+  source ~/.config/nvim/plugins/vim-ansible-yaml.rc.vim
 """
 
 [[plugins]]
 repo = 'Shougo/defx.nvim'
 depends = ['defx-git', 'defx-icons']
-hook_add = """
+hook_add = '''
   nnoremap <silent> <Leader>f :<C-u> Defx <CR>
-"""
+'''
 hook_source = """
-  call defx#custom#option('_', {
-    \ 'winwidth': 40,
-    \ 'split': 'vertical',
-    \ 'direction': 'topleft',
-    \ 'show_ignored_files': 1,
-    \ 'buffer_name': 'exproler',
-    \ 'toggle': 1,
-    \ 'resume': 1,
-    \ 'columns': 'indent:git:icons:filename:mark',
-    \ }) 
-  call defx#custom#column('git', 'indicators', {
-    \ 'Modified'  : '✹',
-    \ 'Staged'    : '✚',
-    \ 'Untracked' : '✭',
-    \ 'Renamed'   : '➜',
-    \ 'Unmerged'  : '═',
-    \ 'Ignored'   : '☒',
-    \ 'Deleted'   : '✖',
-    \ 'Unknown'   : '?'
-    \ })
   source ~/.config/nvim/plugins/defx.rc.vim
 """
 
@@ -56,17 +37,11 @@ repo = 'kristijanhusak/defx-icons'
 repo = 'kristijanhusak/defx-git'
 
 [[plugins]]
-repo = 'Shougo/denite.nvim'
-hook_add = """
-source ~/.config/nvim/plugins/denite.rc.vim
-"""
-
-[[plugins]]
 repo = "neoclide/coc.nvim"
 merge = 0
 rev = "release"
 hook_add = """
-source ~/.config/nvim/plugins/coc.rc.vim
+  source ~/.config/nvim/plugins/coc.rc.vim
 """
 
 [[plugins]]
@@ -78,9 +53,13 @@ repo = "peitalin/vim-jsx-typescript"
 
 [[plugins]]
 repo = 'junegunn/fzf'
-build_on = '''
-./install -all
-'''
+build = './install --all'
+merged = 0
 
 [[plugins]]
 repo = 'junegunn/fzf.vim'
+depends = 'fzf'
+hook_add = '''
+  let g:fzf_layout = { 'down': '50%' }
+  nnoremap <C-P> :Files<CR>
+'''

@@ -1,11 +1,25 @@
 [[plugins]]
 repo = 'Shougo/dein.vim'
 
-# Toml
 [[plugins]]
-repo  = 'cespare/vim-toml'
+repo = 'Shougo/vimproc.vim'
 
 [[plugins]]
 repo = 'jiangmiao/auto-pairs'
-on_i = 1
+
+[[plugins]]
+repo = 'itchyny/lightline.vim'
+hook_add = '''
+source ~/.config/nvim/plugins/lightline.rc.vim
+'''
+
+[[plugins]]
+repo = 'ryanoasis/vim-devicons'
+
+[[plugins]]
+repo = 'kristijanhusak/defx-icons'
+
+[[plugins]]
+repo = 'kristijanhusak/defx-git'
+
 

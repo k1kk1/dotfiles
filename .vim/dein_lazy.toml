@@ -1,4 +1,67 @@
 [[plugins]]
-repo = 'jiangmiao/auto-pairs'
-on_i = 1
+rtp = ''
+repo = 'elzr/vim-json'
+on_ft = ['json']
 
+[[plugins]]
+repo = 'yuezk/vim-js'
+on_ft = ['javascript', 'javascript.jsx']
+
+[[plugins]]
+repo = 'maxmellon/vim-jsx-pretty'
+on_ft = ['javascript', 'javascript.jsx']
+
+[[plugins]]
+repo = 'chase/vim-ansible-yaml'
+hook_add = """
+  source ~/.config/nvim/plugins/vim-ansible-yaml.rc.vim
+"""
+
+[[plugins]]
+repo = 'Shougo/defx.nvim'
+depends = ['defx-git', 'defx-icons']
+hook_add = '''
+  nnoremap <silent> <Leader>f :<C-u> Defx <CR>
+'''
+hook_source = """
+  source ~/.config/nvim/plugins/defx.rc.vim
+"""
+
+[[plugins]]
+repo = "neoclide/coc.nvim"
+merge = 0
+rev = "release"
+hook_add = """
+  source ~/.config/nvim/plugins/coc.rc.vim
+"""
+
+[[plugins]]
+repo  = 'cespare/vim-toml'
+on_ft = ['toml']
+
+[[plugins]]
+repo = "peitalin/vim-jsx-typescript"
+
+[[plugins]]
+repo = 'junegunn/fzf'
+build = './install --bin'
+merged = '0'
+
+[[plugins]]
+repo = 'junegunn/fzf.vim'
+depends = 'fzf'
+on_cmd = [
+  'Files',
+  'ProjectFiles',
+  'Buffers',
+  'BLines',
+  'History',
+  'Tags',
+  'BTags',
+  'GFiles',
+  'Ag',
+]
+hook_add = '''
+  let g:fzf_layout = { 'down': '50%' }
+  nnoremap <C-P> :Files<CR>
+'''

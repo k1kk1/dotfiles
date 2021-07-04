@@ -39,9 +39,13 @@ endif
 "---------------------------------------------------
 "-setting-------------------------------------------
 "---------------------------------------------------
-let g:mapleader = "\<Space>" " Leaderキーをスペースに設定"
+" Leaderキーをスペースに設定
+let g:mapleader = "\<Space>" 
 " ファイル保存と終了
 nnoremap <Leader>w :w<CR>
+" ctrl+s
+nnoremap <C-s> :w<CR>
+inoremap <C-s> <ESC>:w<CR>
 " 共通
 set fenc=utf-8
 set nobackup
@@ -121,6 +125,4 @@ vnoremap <C-Up> "zx<Up>"zP`[V`]
 vnoremap <C-Down> "zx"zp`[V`]
 " typo
 inoremap <C-t> <Esc><Left>"zx"zpa
-" reflesh
-nnoremap <silent> <Esc><Esc><Esc> :<C-u>nohlsearch<CR>
 "---------------------------------------------------

@@ -13,6 +13,9 @@ done
 cp ~/dotfiles/.gitconfig ~/.gitconfig
 echo "cp ~/dotfiles/.gitconfig ~/.gitconfig"
 
+if [[ -d ~/.config/nvim ]]; then
+  mv ~/.config/nvim ~/.config/nvim.bk
+fi
 ln -sf ~/dotfiles/.vim ~/.config/nvim
 echo "ln -sf ~/dotfiles/.vim ~/.config/nvim"
 

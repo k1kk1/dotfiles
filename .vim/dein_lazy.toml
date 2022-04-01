@@ -65,3 +65,7 @@ hook_add = '''
   let g:fzf_layout = { 'down': '50%' }
   nnoremap <C-P> :Files<CR>
 '''
+
+[[plugins]]
+repo = 'leafgarland/typescript-vim'
+

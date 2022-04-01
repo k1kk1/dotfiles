@@ -4,6 +4,7 @@ for f in .??*
 do
   [[ $f = ".git" ]] && continue
   [[ $f = ".gitconfig" ]] && continue
+  [[ $f = ".gitignore" ]] && continue
   [[ $f = ".DS_Store" ]] && continue
   [[ $f = ".vim" ]] && continue
   ln -sf ~/dotfiles/$f ~/$f

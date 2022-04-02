@@ -52,10 +52,6 @@ zinit light sharkdp/bat
 zinit ice wait"2" lucid from"gh-r" as"program" mv"exa* -> exa"
 zinit light ogham/exa
 
-# "b4b4r07/enhancd"
-zinit ice wait'1' lucid pick'init.sh'
-zinit light "b4b4r07/enhancd"
-
 # powerlevel10k
 zinit ice depth=1; zinit light romkatv/powerlevel10k
 

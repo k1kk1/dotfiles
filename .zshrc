@@ -19,16 +19,19 @@ zinit light-mode for \
     zdharma-continuum/z-a-bin-gem-node \
     zdharma-continuum/z-a-rust
 
-# zinit settings
+## zinit settings
 # コマンド補完
 zinit wait lucid atload"zicompinit; zicdreplay" blockf for \
     zsh-users/zsh-completions
-## シンタックスハイライト
+    
+# シンタックスハイライト
 zinit light zdharma-continuum/fast-syntax-highlighting
-## 履歴から補完
+
+# 履歴から補完
 zinit ice wait"0" atload"_zsh_autosuggest_start" lucid
 zinit light zsh-users/zsh-autosuggestions
-## コマンド履歴を検索 Ctrl+r
+
+# コマンド履歴を検索 Ctrl+r
 zstyle ":history-search-multi-word" page-size "11"
 zinit ice wait"1" lucid
 zinit light zdharma-continuum/history-search-multi-word

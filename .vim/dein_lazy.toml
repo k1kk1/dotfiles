@@ -18,13 +18,19 @@ hook_add = """
 """
 
 [[plugins]]
+repo = 'kristijanhusak/defx-icons'
+
+[[plugins]]
+repo = 'kristijanhusak/defx-git'
+
+[[plugins]]
 repo = 'Shougo/defx.nvim'
 depends = ['defx-git', 'defx-icons']
 hook_add = '''
-  nnoremap <silent> <Leader>f :<C-u> Defx <CR>
+nnoremap <silent> <Leader>f :<C-u> Defx <CR>
 '''
 hook_source = """
-  source ~/.config/nvim/plugins/defx.rc.vim
+source ~/.config/nvim/plugins/defx.rc.vim
 """
 
 [[plugins]]
@@ -68,4 +74,3 @@ hook_add = '''
 
 [[plugins]]
 repo = 'leafgarland/typescript-vim'
-

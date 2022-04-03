@@ -15,11 +15,3 @@ source ~/.config/nvim/plugins/lightline.rc.vim
 
 [[plugins]]
 repo = 'ryanoasis/vim-devicons'
-
-[[plugins]]
-repo = 'kristijanhusak/defx-icons'
-
-[[plugins]]
-repo = 'kristijanhusak/defx-git'
-
-

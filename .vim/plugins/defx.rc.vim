@@ -1,15 +1,35 @@
 " Defx settings
 
+let g:defx_icons_enable_syntax_highlight = 1
+let g:defx_icons_column_length = 2
+let g:defx_icons_directory_icon = ''
+let g:defx_icons_mark_icon = '*'
+let g:defx_icons_copy_icon = ''
+let g:defx_icons_link_icon = ''
+let g:defx_icons_move_icon = ''
+let g:defx_icons_parent_icon = ''
+let g:defx_icons_default_icon = ''
+let g:defx_icons_directory_symlink_icon = ''
+" Options below are applicable only when using "tree" feature
+let g:defx_icons_root_opened_tree_icon = ''
+let g:defx_icons_nested_opened_tree_icon = ''
+let g:defx_icons_nested_closed_tree_icon = ''
+
 call defx#custom#option('_', {
-  \ 'winwidth': 40,
+  \ 'winwidth': 30,
   \ 'split': 'vertical',
   \ 'direction': 'topleft',
   \ 'show_ignored_files': 1,
   \ 'buffer_name': 'exproler',
   \ 'toggle': 1,
   \ 'resume': 1,
-  \ 'columns': 'indent:git:icons:filename:mark',
+  \ 'columns': 'indent:git:icons:filename',
   \ }) 
+
+call defx#custom#column('icons', 'column_length', 2)
+
+call defx#custom#column('git', 'column_length', 2)
+
 call defx#custom#column('git', 'indicators', {
   \ 'Modified'  : '✹',
   \ 'Staged'    : '✚',
@@ -19,6 +39,16 @@ call defx#custom#column('git', 'indicators', {
   \ 'Ignored'   : '☒',
   \ 'Deleted'   : '✖',
   \ 'Unknown'   : '?'
+  \ })
+
+call defx#custom#column('filename', {
+  \ 'min_width': 10,
+  \ 'max_width': 20,
+  \ })
+
+call defx#custom#column('mark', {
+  \ 'readonly_icon': '✗',
+  \ 'selected_icon': '✓',
   \ })
 
 autocmd BufWritePost * call defx#redraw()
@@ -52,7 +82,7 @@ function! s:defx_my_settings() abort
   \ defx#do_action('new_multiple_files')
   nnoremap <silent><buffer><expr> C
   \ defx#do_action('toggle_columns',
- \                'mark:indent:icon:filename:type:size:time')
+  \   'mark:indent:icons:filename:type:size:time')
   nnoremap <silent><buffer><expr> S
   \ defx#do_action('toggle_sort', 'time')
   nnoremap <silent><buffer><expr> d

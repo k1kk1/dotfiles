@@ -125,4 +125,6 @@ vnoremap <C-Up> "zx<Up>"zP`[V`]
 vnoremap <C-Down> "zx"zp`[V`]
 " typo
 inoremap <C-t> <Esc><Left>"zx"zpa
+" python
+let g:python3_host_prog = system('echo -n $(which python3)')
 "---------------------------------------------------

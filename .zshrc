@@ -97,6 +97,7 @@ fi
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 # 補完
+zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 setopt list_packed
 
@@ -118,6 +119,9 @@ setopt auto_pushd
 
 # comment
 setopt interactive_comments
+
+# beep
+setopt no_beep
 
 #---------------------------------------------------------------------------------------------------------
 ### Path settings

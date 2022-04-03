@@ -99,7 +99,7 @@ fi
 # 補完
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-setopt list_packed
+setopt list_packed          # 補完候補を詰めて表示
 
 # history
 setopt share_history        # コマンド履歴ファイルを共有
@@ -115,7 +115,7 @@ setopt correct
 
 # cd
 setopt auto_cd
-setopt auto_pushd
+setopt auto_pushd # cd -[tab] 履歴から移動
 
 # comment
 setopt interactive_comments

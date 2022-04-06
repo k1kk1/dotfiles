@@ -5,6 +5,13 @@ repo = 'Shougo/dein.vim'
 repo = 'jiangmiao/auto-pairs'
 
 [[plugins]]
+repo = 'AlessandroYorba/Despacio'
+hook_add = '''
+let g:despacio_Pitch = 1
+colorscheme despacio
+'''
+
+[[plugins]]
 repo = 'itchyny/lightline.vim'
 hook_add = '''
 source ~/.config/nvim/plugins/lightline.rc.vim

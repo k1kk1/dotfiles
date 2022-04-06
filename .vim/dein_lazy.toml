@@ -12,10 +12,19 @@ repo = 'maxmellon/vim-jsx-pretty'
 on_ft = ['javascript', 'javascript.jsx']
 
 [[plugins]]
+repo = 'leafgarland/typescript-vim'
+on_ft = ['typescript', 'typescriptreact']
+
+[[plugins]]
 repo = 'chase/vim-ansible-yaml'
 hook_add = """
   source ~/.config/nvim/plugins/vim-ansible-yaml.rc.vim
 """
+on_ft = 'ansible'
+
+[[plugins]]
+repo  = 'cespare/vim-toml'
+on_ft = ['toml']
 
 [[plugins]]
 repo = 'Shougo/defx.nvim'
@@ -34,13 +43,6 @@ rev = "release"
 hook_add = """
   source ~/.config/nvim/plugins/coc.rc.vim
 """
-
-[[plugins]]
-repo  = 'cespare/vim-toml'
-on_ft = ['toml']
-
-[[plugins]]
-repo = "peitalin/vim-jsx-typescript"
 
 [[plugins]]
 repo = 'junegunn/fzf'
@@ -65,7 +67,3 @@ hook_add = '''
   let g:fzf_layout = { 'down': '50%' }
   nnoremap <C-P> :Files<CR>
 '''
-
-[[plugins]]
-repo = 'leafgarland/typescript-vim'
-

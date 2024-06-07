@@ -5,13 +5,13 @@ elif [[ $(command -v batcat) ]]; then
     alias cat="batcat"
 fi
 
-# exa settings
-if [[ $(command -v exa) ]]; then
-    alias exa="exa --icons"
-    alias ls="exa"
-    alias ll="exa -al --git"
-    alias lla="exa -aal"
-    alias lt='exa -T -L 3 -a -I "node_modules|.git|.cache" --icons'
+# eza settings
+if [[ $(command -v eza) ]]; then
+    alias eza="eza --icons"
+    alias ls="eza"
+    alias ll="eza -al --git"
+    alias lla="eza -aal"
+    alias lt='eza -T -L 3 -a -I "node_modules|.git|.cache" --icons'
 fi
 
 # ripgrep

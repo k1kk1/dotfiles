@@ -21,8 +21,9 @@ background-opacity = 0.85
 # macOS タイトルバーを非表示
 macos-titlebar-style = hidden
 
-# IME 有効
-macos-option-as-alt = false
+# Option/Alt を Meta として送る
+# fzf の Alt-c などを使うために必要
+macos-option-as-alt = true
 
 # ==============================================================================
 # Appearance

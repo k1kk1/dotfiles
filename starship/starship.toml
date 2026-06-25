@@ -90,14 +90,13 @@ number_threshold = 1
 symbol_threshold = 1
 style = "color(37)"
 
-# Python: venv / pyenv / conda — p10k: virtualenv/pyenv fg=37
+# Python: python3 -m venv の .venv を表示
 [python]
 symbol = " "
-format = '[$symbol${pyenv_prefix}${version}( \($virtualenv\))]($style) '
+format = '[$symbol${version}( \($virtualenv\))]($style) '
 style = "color(37)"
-pyenv_version_name = true
-pyenv_prefix = ""
-detect_files = [".python-version", "requirements.txt", "pyproject.toml", "setup.py", "Pipfile"]
+python_binary = ["./.venv/bin/python", "python", "python3"]
+detect_files = ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"]
 detect_folders = [".venv", "venv"]
 detect_extensions = ["py"]
 version_format = "v${raw}"

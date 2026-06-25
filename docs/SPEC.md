@@ -11,6 +11,7 @@
 * 表示内容は大きく変えず、自前 prompt で再現する
 * `fzf` は継続利用する
 * `z` は `zoxide` で導入する
+* Python 仮想環境は `python3 -m venv` の `.venv` を前提にする
 * CLI ツールは Homebrew 管理へ寄せる
 * Zsh plugin は `git clone + source` の単純な方式にする
 * kube / aws / terraform / env などの環境表示は残す
@@ -362,7 +363,7 @@ Powerlevel10k を使わず、自前 prompt を使用する。
 * `asdf`
 * Python 仮想環境
 * conda 環境
-* pyenv version
+* Python version
 * Node 環境
 * kube context
 * Terraform workspace

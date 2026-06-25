@@ -1,5 +1,5 @@
 # Ghostty 設定
-# dotfilesv2/ghostty/config -> ~/.config/ghostty/config
+# dotfiles/ghostty/config -> ~/.config/ghostty/config
 
 # ==============================================================================
 # Font
@@ -37,5 +37,5 @@ cursor-style-blink = false
 # Keybinds
 # ==============================================================================
 
-# デフォルトキーバインドをそのまま使用
-# カスタマイズが必要な場合はここに追加
+# Quick Terminal を Option+Space で開閉
+keybind = global:alt+space=toggle_quick_terminal

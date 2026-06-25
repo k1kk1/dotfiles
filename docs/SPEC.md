@@ -362,7 +362,6 @@ Powerlevel10k を使わず、自前 prompt を使用する。
 * `direnv`
 * `asdf`
 * Python 仮想環境
-* conda 環境
 * Python version
 * Node 環境
 * kube context

@@ -69,7 +69,6 @@ install.sh は以下を自動実行する。何度実行しても安全（冪等
 | `12s` | グレー | コマンドが 3 秒以上かかった |
 | `⚙ 2` | シアン | バックグラウンドジョブが動いている |
 | ` v3.11.9 (.venv)` | シアン | `python3 -m venv` の仮想環境が有効 |
-| ` myenv` | シアン | conda 環境アクティブ |
 | ` v20.0.0` | グレー | Node.js（package.json があるとき） |
 | `󱃾 my-dev` | 紫 | Kubernetes context |
 | `󱃾 my-staging` | 黄 | staging 系 context |

@@ -6,7 +6,7 @@
 #
 # Left:   directory  git_branch git_status
 #         ❯
-# Right:  status  cmd_duration  jobs  python  conda  nodejs  kubernetes  terraform  aws  direnv
+# Right:  status  cmd_duration  jobs  python  nodejs  kubernetes  terraform  aws  direnv
 #
 # p10k classic/disconnected スタイルに合わせる（パワーライン矢印なし）
 
@@ -18,7 +18,6 @@ $status\
 $cmd_duration\
 $jobs\
 $python\
-$conda\
 $nodejs\
 $kubernetes"""
 
@@ -100,13 +99,6 @@ detect_files = ["requirements.txt", "pyproject.toml", "setup.py", "Pipfile"]
 detect_folders = [".venv", "venv"]
 detect_extensions = ["py"]
 version_format = "v${raw}"
-
-[conda]
-symbol = " "
-format = "[$symbol$environment]($style) "
-style = "color(37)"
-ignore_base = true
-truncation_length = 20
 
 # Node.js — package.json があるときのみ / fg=244
 [nodejs]

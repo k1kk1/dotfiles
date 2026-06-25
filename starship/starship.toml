@@ -37,7 +37,7 @@ read_only = " 󰌾"
 read_only_style = "red"
 
 [git_branch]
-# symbol はデフォルト（Starship 組み込みの Nerd Font 文字）を使用
+symbol = " "
 format = "  [$symbol$branch]($style)"
 style = "bright-red"
 truncation_length = 40
@@ -84,14 +84,15 @@ show_milliseconds = false
 
 # Background jobs — p10k: fg=37
 [jobs]
-format = "[⚙ $number]($style) "
+symbol = " "
+format = "[$symbol$number]($style) "
 number_threshold = 1
 symbol_threshold = 1
 style = "color(37)"
 
 # Python: venv / pyenv / conda — p10k: virtualenv/pyenv fg=37
 [python]
-# symbol はデフォルト（Nerd Font の Python アイコン）を使用
+symbol = " "
 format = '[$symbol${pyenv_prefix}${version}( \($virtualenv\))]($style) '
 style = "color(37)"
 pyenv_version_name = true
@@ -102,7 +103,7 @@ detect_extensions = ["py"]
 version_format = "v${raw}"
 
 [conda]
-# symbol はデフォルトを使用
+symbol = " "
 format = "[$symbol$environment]($style) "
 style = "color(37)"
 ignore_base = true
@@ -110,7 +111,7 @@ truncation_length = 20
 
 # Node.js — package.json があるときのみ / fg=244
 [nodejs]
-# symbol はデフォルトを使用
+symbol = " "
 format = "[$symbol$version]($style) "
 style = "color(244)"
 detect_files = ["package.json"]

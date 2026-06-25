@@ -116,6 +116,14 @@ setopt NO_BEEP
 
 ZSH_PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 
+# Homebrew の補完関数を compinit より前に fpath へ追加する
+if command -v brew >/dev/null 2>&1; then
+  HOMEBREW_PREFIX="$(brew --prefix 2>/dev/null)"
+  if [[ -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]]; then
+    fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
+  fi
+fi
+
 # zsh-completions は compinit より前に fpath へ追加する
 if [[ -d "$ZSH_PLUGIN_DIR/zsh-completions/src" ]]; then
   fpath=("$ZSH_PLUGIN_DIR/zsh-completions/src" $fpath)
@@ -129,8 +137,8 @@ autoload -Uz compinit
 
 zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
 
-# .zcompdump が古いときだけ通常 compinit、それ以外は -C で高速起動
-if [[ -n "$zcompdump"(#qN.mh+24) ]]; then
+# .zcompdump が無い、または古いときは通常 compinit、それ以外は -C で高速起動
+if [[ ! -f "$zcompdump" || -n "$zcompdump"(#qN.mh+24) ]]; then
   compinit
 else
   compinit -C

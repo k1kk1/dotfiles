@@ -1,0 +1,153 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# ==============================================================================
+# Layout
+# ==============================================================================
+#
+# Left:   directory  git_branch git_status
+#         ❯
+# Right:  status  cmd_duration  jobs  python  conda  nodejs  kubernetes  terraform  aws  direnv
+#
+# p10k classic/disconnected スタイルに合わせる（パワーライン矢印なし）
+
+format = """
+$directory$git_branch$git_status$line_break$character"""
+
+right_format = """
+$status\
+$cmd_duration\
+$jobs\
+$python\
+$conda\
+$nodejs\
+$kubernetes"""
+
+add_newline = false
+
+# ==============================================================================
+# Left prompt
+# ==============================================================================
+
+[directory]
+style = "white"
+truncation_length = 5
+truncation_symbol = "…/"
+home_symbol = "~"
+read_only = " 󰌾"
+read_only_style = "red"
+
+[git_branch]
+# symbol はデフォルト（Starship 組み込みの Nerd Font 文字）を使用
+format = "  [$symbol$branch]($style)"
+style = "bright-red"
+truncation_length = 40
+truncation_symbol = "…"
+always_show_remote = false
+
+[git_status]
+format = '([$all_status$ahead_behind]($style)) '
+style = "yellow"
+conflicted = "~${count}"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?${count}"
+stashed = '$${count}'
+modified = "*${count}"
+staged = "+${count}"
+renamed = "»${count}"
+deleted = "✘${count}"
+
+[character]
+success_symbol = "[❯](white)"
+error_symbol = "[❯](red)"
+vimcmd_symbol = "[❮](white)"
+
+# ==============================================================================
+# Right prompt
+# ==============================================================================
+
+# Exit status — p10k: STATUS_OK=false, error fg=160
+[status]
+disabled = false
+format = "[✘ $status]($style) "
+style = "bold color(160)"
+recognize_signal_code = true
+map_symbol = false
+
+# Duration — p10k: threshold=3s, fg=248
+[cmd_duration]
+min_time = 3_000
+format = "[$duration]($style) "
+style = "color(248)"
+show_milliseconds = false
+
+# Background jobs — p10k: fg=37
+[jobs]
+format = "[⚙ $number]($style) "
+number_threshold = 1
+symbol_threshold = 1
+style = "color(37)"
+
+# Python: venv / pyenv / conda — p10k: virtualenv/pyenv fg=37
+[python]
+# symbol はデフォルト（Nerd Font の Python アイコン）を使用
+format = '[$symbol${pyenv_prefix}${version}( \($virtualenv\))]($style) '
+style = "color(37)"
+pyenv_version_name = true
+pyenv_prefix = ""
+detect_files = [".python-version", "requirements.txt", "pyproject.toml", "setup.py", "Pipfile"]
+detect_folders = [".venv", "venv"]
+detect_extensions = ["py"]
+version_format = "v${raw}"
+
+[conda]
+# symbol はデフォルトを使用
+format = "[$symbol$environment]($style) "
+style = "color(37)"
+ignore_base = true
+truncation_length = 20
+
+# Node.js — package.json があるときのみ / fg=244
+[nodejs]
+# symbol はデフォルトを使用
+format = "[$symbol$version]($style) "
+style = "color(244)"
+detect_files = ["package.json"]
+detect_folders = ["node_modules"]
+detect_extensions = []
+
+# Kubernetes — p10k: KUBECONTEXT_DEFAULT fg=134, prod=red
+[kubernetes]
+disabled = false
+format = '[$symbol$context( \($namespace\))]($style) '
+symbol = "󱃾 "
+style = "color(134)"
+contexts = [
+  { context_pattern = ".*prod.*", style = "bold red", symbol = "⛔ " },
+  { context_pattern = ".*production.*", style = "bold red", symbol = "⛔ " },
+  { context_pattern = ".*stg.*", style = "yellow", symbol = "󱃾 " },
+  { context_pattern = ".*staging.*", style = "yellow", symbol = "󱃾 " },
+]
+
+# ==============================================================================
+# Disabled modules
+# ==============================================================================
+
+[terraform]
+disabled = true
+
+[aws]
+disabled = true
+
+[package]
+disabled = true
+
+[docker_context]
+disabled = true
+
+[gcloud]
+disabled = true
+
+[azure]
+disabled = true

@@ -450,7 +450,7 @@ aws-vault:<AWS_VAULT>
 
 補完は zsh 標準の `compinit` を使用する。
 
-`zsh-completions` が存在する場合は、`compinit` より前に `fpath` へ追加する。
+Homebrew の補完関数と `zsh-completions` が存在する場合は、`compinit` より前に `fpath` へ追加する。
 
 補完設定。
 
@@ -462,7 +462,8 @@ zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%F{244}-- %d --%f'
 ```
 
-`.zcompdump` が24時間以内に更新されている場合は `compinit -C` を使って高速化する。
+`.zcompdump` が存在し、24時間以内に更新されている場合は `compinit -C` を使って高速化する。
+`.zcompdump` が無い、または古い場合は通常の `compinit` で補完キャッシュを作り直す。
 
 ## 11. History 仕様
 

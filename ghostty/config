@@ -18,8 +18,9 @@ font-size = 12
 background = #1c1c2e
 background-opacity = 0.85
 
-# macOS タイトルバーを非表示
-macos-titlebar-style = hidden
+# 1タブ時は専用のタブ列を常設せず、背景と一体化したタイトルバーにする。
+# hiddenではmacOSのタブを利用できず、Cmd+Tが新規ウィンドウになる。
+macos-titlebar-style = transparent
 
 # Option/Alt を Meta として送る
 # fzf の Alt-c などを使うために必要
@@ -39,3 +40,6 @@ cursor-style-blink = false
 
 # Quick Terminal を Option+Space で開閉
 keybind = global:alt+space=toggle_quick_terminal
+
+# 同じウィンドウ内に新しいタブを作成
+keybind = cmd+t=new_tab

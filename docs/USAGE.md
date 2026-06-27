@@ -14,6 +14,8 @@ dotfiles/
 ├── .vim/               Vim / Neovim 設定 -> ~/.vim, ~/.config/nvim
 ├── ghostty/
 │   └── config          ターミナル設定 -> ~/.config/ghostty/config
+├── tmux/
+│   └── .tmux.conf      tmux設定 -> ~/.tmux.conf
 └── docs/
     ├── SPEC.md         移行仕様書
     └── USAGE.md        このファイル
@@ -32,7 +34,7 @@ install.sh は以下を自動実行する。何度実行しても安全（冪等
 
 1. Homebrew ツールのインストール（未インストールのみ）
 2. Zsh プラグインの clone（未 clone のみ）
-3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
+3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.tmux.conf`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
 4. 構文チェックと fzf 動作確認
 
 ---

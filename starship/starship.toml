@@ -4,28 +4,36 @@
 # Layout
 # ==============================================================================
 #
-# Left:   directory  git_branch git_status
+# Left:   directory  git_branch git_status       python nodejs kubernetes
 #         ❯
-# Right:  status  cmd_duration  jobs  python  nodejs  kubernetes  terraform  aws  direnv
+# Right:  status  cmd_duration  jobs
 #
 # p10k classic/disconnected スタイルに合わせる（パワーライン矢印なし）
 
 format = """
-$directory$git_branch$git_status$line_break$character"""
+$directory\
+$git_branch\
+$git_status\
+$fill\
+$python\
+$nodejs\
+$kubernetes\
+$line_break\
+$character"""
 
 right_format = """
 $status\
 $cmd_duration\
-$jobs\
-$python\
-$nodejs\
-$kubernetes"""
+$jobs"""
 
 add_newline = false
 
 # ==============================================================================
 # Left prompt
 # ==============================================================================
+
+[fill]
+symbol = " "
 
 [directory]
 style = "white"
@@ -63,7 +71,7 @@ error_symbol = "[❯](red)"
 vimcmd_symbol = "[❮](white)"
 
 # ==============================================================================
-# Right prompt
+# Right prompt（入力行）
 # ==============================================================================
 
 # Exit status — p10k: STATUS_OK=false, error fg=160
@@ -88,6 +96,10 @@ format = "[$symbol$number]($style) "
 number_threshold = 1
 symbol_threshold = 1
 style = "color(37)"
+
+# ==============================================================================
+# Environment information（上段右側）
+# ==============================================================================
 
 # Python: python3 -m venv の .venv を表示
 [python]

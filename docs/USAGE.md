@@ -18,7 +18,8 @@ dotfiles/
 │   └── .tmux.conf      tmux設定 -> ~/.tmux.conf
 └── docs/
     ├── SPEC.md         移行仕様書
-    └── USAGE.md        このファイル
+    ├── USAGE.md        このファイル
+    └── cheatsheet.html キーボード・設定チートシート
 ```
 
 ---

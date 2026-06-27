@@ -93,9 +93,9 @@ _symlink "$DOTFILES_DIR/git/.gitconfig"      "$HOME/.gitconfig"
 _symlink "$DOTFILES_DIR/starship/starship.toml" "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
 _symlink "$DOTFILES_DIR/ghostty/config"      "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 _symlink "$DOTFILES_DIR/tmux/.tmux.conf"     "$HOME/.tmux.conf"
-_symlink "$DOTFILES_DIR/.vim"                "$HOME/.vim"
-_symlink "$DOTFILES_DIR/.vim"                "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
-_symlink "$DOTFILES_DIR/.vim/init.vim"       "$HOME/.vimrc"
+_symlink "$DOTFILES_DIR/vim"                 "$HOME/.vim"
+_symlink "$DOTFILES_DIR/vim"                 "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+_symlink "$DOTFILES_DIR/vim/init.vim"        "$HOME/.vimrc"
 
 # ------------------------------------------------------------------------------
 # 4. 動作確認

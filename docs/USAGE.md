@@ -11,7 +11,7 @@ dotfiles/
 │   └── .gitconfig      Git 設定 -> ~/.gitconfig
 ├── starship/
 │   └── starship.toml   プロンプト設定 -> ~/.config/starship.toml
-├── .vim/               Vim / Neovim 設定 -> ~/.vim, ~/.config/nvim
+├── vim/                Vim / Neovim 設定 -> ~/.vim, ~/.config/nvim
 ├── ghostty/
 │   └── config          ターミナル設定 -> ~/.config/ghostty/config
 ├── tmux/

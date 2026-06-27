@@ -122,8 +122,8 @@ zsh/.zshrc
   └─ Prompt
 ```
 
-Vim / Neovim 設定は旧構成と同じ `.vim/` 配下に置く。
-`install.sh` では `.vim/` を `~/.vim` と `~/.config/nvim` へ、`.vim/init.vim` を `~/.vimrc` へリンクする。
+Vim / Neovim 設定は `vim/` 配下に置く。
+`install.sh` では `vim/` を `~/.vim` と `~/.config/nvim` へ、`vim/init.vim` を `~/.vimrc` へリンクする。
 Git 設定は `git/.gitconfig` に置き、`~/.gitconfig` へリンクする。
 Starship 設定は `starship/starship.toml` に置き、`~/.config/starship.toml` へリンクする。
 

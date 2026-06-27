@@ -22,6 +22,10 @@ background-opacity = 0.85
 # hiddenではmacOSのタブを利用できず、Cmd+Tが新規ウィンドウになる。
 macos-titlebar-style = transparent
 
+# タイトルバーの装飾を減らし、タイトル文字列だけを表示する
+macos-window-buttons = hidden
+macos-titlebar-proxy-icon = hidden
+
 # Option/Alt を Meta として送る
 # fzf の Alt-c などを使うために必要
 macos-option-as-alt = true

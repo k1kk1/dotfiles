@@ -265,6 +265,26 @@ if command -v zoxide >/dev/null 2>&1; then
 fi
 
 # ==============================================================================
+# Window title
+# ==============================================================================
+
+# tmux外では「現在ディレクトリ · Gitブランチ」をGhosttyのタイトルへ表示する。
+# tmux内のタイトルはtmux/.tmux.conf側で設定するため、ここでは変更しない。
+_update_window_title() {
+  [[ -n "${TMUX:-}" ]] && return
+
+  local title="${PWD/#$HOME/~}"
+  local branch
+  branch="$(command git branch --show-current 2>/dev/null)"
+
+  [[ -n "$branch" ]] && title+=" · $branch"
+  print -n -- $'\e]2;' "$title" $'\a'
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _update_window_title
+
+# ==============================================================================
 # Prompt — Starship
 # ==============================================================================
 #

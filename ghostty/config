@@ -46,8 +46,8 @@ selection-foreground = #17130f
 # Alerts
 # ==============================================================================
 
-# BEL受信時にmacOSの警告音を鳴らし、Ghosttyが非アクティブなら
-# Dockとタイトルでも通知する。枠はtmuxステータス通知と重複するため使わない。
+# BEL受信時は Ghostty 固有のタイトル通知も使い、
+# tmux 側の Nerd Font 通知と併用する。
 bell-features = system,attention,title,no-border
 
 # OSC 9 / OSC 777によるデスクトップ通知を許可する。

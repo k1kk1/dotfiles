@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Dotfiles Cheat Sheet</title>
+  <style>
+    :root {
+      --bg: #11111b;
+      --panel: #1c1c2e;
+      --panel-2: #24243a;
+      --line: #353550;
+      --text: #f0f0f5;
+      --muted: #a6a6bd;
+      --cyan: #4fa7c2;
+      --green: #8bd49c;
+      --yellow: #e8c96b;
+      --red: #ff7a90;
+      --purple: #c7a0ff;
+      --shadow: 0 18px 50px rgb(0 0 0 / 24%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 7rem;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% -8%, rgb(99 216 239 / 14%), transparent 28rem),
+        radial-gradient(circle at 90% 0%, rgb(199 160 255 / 11%), transparent 25rem),
+        var(--bg);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Hiragino Sans", "Yu Gothic UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: inherit; }
+
+    code, kbd, .mono {
+      font-family: "HackGen Console NF", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 72px 0 32px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--cyan);
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 860px;
+      font-size: clamp(2.25rem, 6vw, 5rem);
+      line-height: 1.02;
+      letter-spacing: -.055em;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .toolbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      padding: 12px 0;
+      background: rgb(17 17 27 / 86%);
+      border-bottom: 1px solid rgb(53 53 80 / 72%);
+      backdrop-filter: blur(16px);
+    }
+
+    .toolbar-inner {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 2fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 14px;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      outline: none;
+      font: inherit;
+    }
+
+    .search:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgb(99 216 239 / 14%);
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    nav::-webkit-scrollbar { display: none; }
+
+    nav a {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: .86rem;
+      font-weight: 700;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      background: var(--panel);
+      border-color: var(--line);
+    }
+
+    main { padding: 42px 0 90px; }
+
+    section { margin-top: 56px; }
+
+    .section-head {
+      display: flex;
+      gap: 18px;
+      align-items: end;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      letter-spacing: -.035em;
+    }
+
+    .section-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: .88rem;
+      text-align: right;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      min-width: 0;
+      padding: 19px;
+      background: linear-gradient(145deg, rgb(36 36 58 / 94%), rgb(28 28 46 / 94%));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card.wide { grid-column: 1 / -1; }
+
+    .card h3 {
+      margin: 0 0 14px;
+      color: var(--cyan);
+      font-size: .82rem;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .rows {
+      display: grid;
+      gap: 0;
+      margin: 0;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(130px, .7fr) minmax(0, 1.3fr);
+      gap: 16px;
+      align-items: start;
+      padding: 10px 0;
+      border-top: 1px solid rgb(53 53 80 / 68%);
+    }
+
+    .row:first-child {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .row:last-child { padding-bottom: 0; }
+
+    dt, dd { margin: 0; }
+    dd { color: var(--muted); }
+
+    kbd {
+      display: inline-block;
+      min-width: 1.8em;
+      margin: 1px 2px 1px 0;
+      padding: 2px 7px;
+      color: var(--text);
+      background: #11111b;
+      border: 1px solid #484865;
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 700;
+      line-height: 1.55;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    code {
+      color: var(--green);
+      overflow-wrap: anywhere;
+    }
+
+    .prompt {
+      padding: 18px;
+      overflow-x: auto;
+      color: #efeff4;
+      background: #0c0c14;
+      border: 1px solid #303048;
+      border-radius: 12px;
+      font-size: .9rem;
+      white-space: pre;
+    }
+
+    .c-red { color: var(--red); }
+    .c-yellow { color: var(--yellow); }
+    .c-cyan { color: var(--cyan); }
+    .c-purple { color: var(--purple); }
+    .c-green { color: var(--green); }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 6px 9px;
+      color: var(--muted);
+      background: #151522;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: .78rem;
+    }
+
+    .empty {
+      display: none;
+      margin: 40px 0;
+      padding: 30px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+    }
+
+    .is-hidden { display: none !important; }
+
+    footer {
+      padding: 28px 0 54px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: .85rem;
+    }
+
+    @media (max-width: 760px) {
+      header { padding-top: 48px; }
+      .toolbar-inner { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .card.wide { grid-column: auto; }
+      .section-head { align-items: start; flex-direction: column; gap: 4px; }
+      .section-note { text-align: left; }
+      .row { grid-template-columns: 1fr; gap: 4px; }
+    }
+
+    @media print {
+      :root {
+        --bg: #fff;
+        --panel: #fff;
+        --panel-2: #fff;
+        --line: #ddd;
+        --text: #111;
+        --muted: #444;
+      }
+      body { background: #fff; font-size: 10pt; }
+      header { padding-top: 18px; }
+      .toolbar { display: none; }
+      .card { break-inside: avoid; box-shadow: none; }
+      section { margin-top: 28px; }
+      main { padding-bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">Personal environment reference</p>
+    <h1>Dotfiles<br>Cheat Sheet</h1>
+    <p class="lead">
+      Ghostty、Zsh、tmux、Vim / Neovim、Starshipの現在の設定を、
+      「思い出すまでが一番長い」順にまとめた早見表。
+    </p>
+  </header>
+
+  <div class="toolbar">
+    <div class="shell toolbar-inner">
+      <input id="search" class="search" type="search"
+        placeholder="キー、コマンド、説明を検索… 例: Ctrl-r / git / pane"
+        aria-label="チートシートを検索">
+      <nav aria-label="セクション">
+        <a href="#ghostty">Ghostty</a>
+        <a href="#zsh">Zsh</a>
+        <a href="#tmux">tmux</a>
+        <a href="#vim">Vim</a>
+        <a href="#starship">Starship</a>
+        <a href="#settings">設定</a>
+      </nav>
+    </div>
+  </div>
+
+  <main class="shell">
+    <div id="empty" class="empty">一致する項目がありません。検索語を短くしてみてください。</div>
+
+    <section id="ghostty" data-search-section>
+      <div class="section-head">
+        <h2>Ghostty</h2>
+        <p class="section-note">ターミナル本体・macOS</p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Keyboard</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>T</kbd></dt><dd>同じウィンドウに新しいタブを作成</dd></div>
+            <div class="row"><dt><kbd>⌥</kbd> <kbd>Space</kbd></dt><dd>Quick Terminalをどこからでも開閉</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>,</kbd></dt><dd>Ghostty設定を再読み込み</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Appearance</h3>
+          <dl class="rows">
+            <div class="row"><dt>Font</dt><dd><code>HackGen Console NF / 12pt</code></dd></div>
+            <div class="row"><dt>Background</dt><dd><code>#0b0b0b / 85%</code> 透過</dd></div>
+            <div class="row"><dt>Titlebar</dt><dd><code>transparent</code>、ウィンドウボタンとproxy iconは非表示</dd></div>
+            <div class="row"><dt>Option key</dt><dd>OptionをAlt / Metaとして送信</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Window &amp; tabs</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>N</kbd></dt><dd>新しいウィンドウ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>W</kbd></dt><dd>現在のsurface（タブ・split・ウィンドウ）を閉じる</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd></dt><dd>現在のウィンドウを閉じる</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>[</kbd> / <kbd>]</kbd></dt><dd>前 / 次のタブ</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>Tab</kbd></dt><dd>次のタブ。Shift付きで前のタブ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>1…9</kbd></dt><dd>指定タブへ移動。9は最後のタブ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>Enter</kbd></dt><dd>フルスクリーン切り替え</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Splits</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>D</kbd></dt><dd>右方向にsplit</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>D</kbd></dt><dd>下方向にsplit</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>[</kbd> / <kbd>]</kbd></dt><dd>前 / 次のsplitへ移動</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>矢印</kbd></dt><dd>方向を指定してsplitへ移動</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>Ctrl</kbd> <kbd>矢印</kbd></dt><dd>splitを10pxずつリサイズ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>Enter</kbd></dt><dd>現在のsplitをズーム</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Terminal</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>C</kbd> / <kbd>V</kbd></dt><dd>コピー / ペースト</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>+</kbd> / <kbd>-</kbd></dt><dd>フォントサイズを拡大 / 縮小</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>0</kbd></dt><dd>フォントサイズをリセット</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>K</kbd></dt><dd>画面をクリア</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>F</kbd></dt><dd>ターミナル内検索を開始</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>G</kbd></dt><dd>次の検索結果。Shift付きで前へ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>前 / 次のプロンプトへジャンプ</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="zsh" data-search-section>
+      <div class="section-head">
+        <h2>Zsh &amp; CLI</h2>
+        <p class="section-note">検索・補完・移動・短縮コマンド</p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>fzf &amp; Completion</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>R</kbd></dt><dd>コマンド履歴をインクリメンタル検索</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>T</kbd></dt><dd>ファイルを検索してコマンドラインへ挿入</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>C</kbd></dt><dd>ディレクトリを検索して移動</dd></div>
+            <div class="row"><dt><kbd>**</kbd> <kbd>Tab</kbd></dt><dd>fzfによるパス補完</dd></div>
+            <div class="row"><dt><kbd>Tab</kbd></dt><dd>候補メニューを表示。大文字・小文字を区別せず照合</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Line editing</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>A</kbd> / <kbd>Ctrl</kbd> <kbd>E</kbd></dt><dd>行頭 / 行末へ移動</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>U</kbd> / <kbd>Ctrl</kbd> <kbd>K</kbd></dt><dd>行頭まで / 行末まで削除</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>W</kbd></dt><dd>直前の単語を削除</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>Y</kbd></dt><dd>最後に削除した文字列を貼り付け</dd></div>
+            <div class="row"><dt><kbd>→</kbd> / <kbd>End</kbd></dt><dd>autosuggestionをすべて採用</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>F</kbd></dt><dd>autosuggestionを1単語分採用</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Emacs keymap</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>B</kbd> / <kbd>F</kbd></dt><dd>カーソルを1文字戻す / 進める</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>P</kbd> / <kbd>N</kbd></dt><dd>前 / 次の履歴</dd></div>
+            <div class="row"><dt><kbd>Backspace</kbd></dt><dd>カーソル前の1文字を削除</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>_</kbd></dt><dd>直前の編集を取り消す</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>B</kbd> / <kbd>F</kbd></dt><dd>単語単位で戻る / 進む</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>File &amp; navigation</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>l</code></dt><dd>アイコン付き一覧</dd></div>
+            <div class="row"><dt><code>ll</code></dt><dd>隠しファイル・Git状態を含む詳細一覧</dd></div>
+            <div class="row"><dt><code>la</code></dt><dd>隠しファイルを含む一覧</dd></div>
+            <div class="row"><dt><code>tree</code></dt><dd>ディレクトリツリーを表示</dd></div>
+            <div class="row"><dt><code>z keyword</code></dt><dd>履歴からディレクトリへ移動</dd></div>
+            <div class="row"><dt><code>zi</code></dt><dd>fzfで移動先を選択</dd></div>
+            <div class="row"><dt><code>mkcd dir</code></dt><dd>ディレクトリを作成して移動</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Git aliases</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>g</code></dt><dd><code>git</code></dd></div>
+            <div class="row"><dt><code>gs</code></dt><dd><code>git status --short --branch</code></dd></div>
+            <div class="row"><dt><code>ga</code> / <code>gc</code></dt><dd><code>git add</code> / <code>git commit</code></dd></div>
+            <div class="row"><dt><code>gd</code></dt><dd><code>git diff</code></dd></div>
+            <div class="row"><dt><code>gl</code></dt><dd>装飾付きコミットグラフを直近30件表示</dd></div>
+            <div class="row"><dt><code>gp</code> / <code>gpl</code></dt><dd><code>git push</code> / <code>git pull --ff-only</code></dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Utilities</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>k</code> / <code>tf</code></dt><dd><code>kubectl</code> / <code>terraform</code></dd></div>
+            <div class="row"><dt><code>reload-zsh</code></dt><dd>Zsh設定を再読み込み</dd></div>
+            <div class="row"><dt><code>path-list</code></dt><dd>PATHを1行ずつ表示</dd></div>
+            <div class="row"><dt><code>which-all cmd</code></dt><dd>コマンドの解決候補をすべて表示</dd></div>
+            <div class="row"><dt><code>zsh-startup-time</code></dt><dd>Zsh起動時間を5回測定</dd></div>
+            <div class="row"><dt><code>zsh-plugins-update</code></dt><dd>Zshプラグインを一括更新</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Shell behavior</h3>
+          <div class="pills">
+            <span class="pill">共有履歴</span>
+            <span class="pill">重複履歴を除外</span>
+            <span class="pill">AUTO_CD</span>
+            <span class="pill">AUTO_PUSHD</span>
+            <span class="pill">大文字小文字を無視するglob</span>
+            <span class="pill">インタラクティブコメント</span>
+            <span class="pill">ビープ無効</span>
+            <span class="pill">Emacsキーマップ</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="tmux" data-search-section>
+      <div class="section-head">
+        <h2>tmux</h2>
+        <p class="section-note"><kbd>Prefix</kbd> は既定の <kbd>Ctrl</kbd> <kbd>B</kbd></p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Windows &amp; pane navigation</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Shift</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>前 / 次のウィンドウへ移動（Prefix不要）</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>N</kbd> / <kbd>P</kbd></dt><dd>次 / 前のウィンドウへ移動</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右のペインへ移動（Prefix不要）</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>矢印</kbd></dt><dd>方向を指定してペインへ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>O</kbd></dt><dd>次のペインへ移動</dd></div>
+            <div class="row"><dt>Trackpad scroll</dt><dd>上スクロールでcopy modeへ入り、履歴を表示</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Pane operations</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>|</kbd></dt><dd>左右にペイン分割</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>-</kbd></dt><dd>上下にペイン分割</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Z</kbd></dt><dd>現在のペインをズーム / 元に戻す</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>[</kbd></dt><dd>copy modeへ入る</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>S</kbd></dt><dd>複数ペインへの同時入力を切り替え</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>X</kbd></dt><dd>現在のペインを終了</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Ctrl</kbd> <kbd>X</kbd></dt><dd>現在のウィンドウを終了</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Windows &amp; session</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>C</kbd></dt><dd>新しいウィンドウを作成</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>0…9</kbd></dt><dd>番号を指定してウィンドウへ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>&amp;</kbd></dt><dd>確認後、現在のウィンドウを終了</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>D</kbd></dt><dd>セッションを維持したままdetach</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Copy mode</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>V</kbd></dt><dd>vi風の範囲選択を開始</dd></div>
+            <div class="row"><dt><kbd>Y</kbd></dt><dd>選択範囲をOSのクリップボードへコピー</dd></div>
+            <div class="row"><dt>Mouse selection</dt><dd>ドラッグ終了時にコピーしてcopy modeを終了</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Monitor scripts</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>tmp/scripts/k8s-monitor</code></dt><dd>Kubernetes監視セッションを開始 / 再接続</dd></div>
+            <div class="row"><dt><code>tmp/scripts/k8s-monitor --kill</code></dt><dd>監視セッションを終了</dd></div>
+            <div class="row"><dt>Windows</dt><dd><code>stern</code> / <code>watch_pod</code> / <code>free</code></dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="vim" data-search-section>
+      <div class="section-head">
+        <h2>Vim / Neovim</h2>
+        <p class="section-note"><kbd>Leader</kbd> は <kbd>Space</kbd></p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Files &amp; search</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Leader</kbd> <kbd>W</kbd></dt><dd>ファイルを保存</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>S</kbd></dt><dd>ノーマル / 挿入モードから保存</dd></div>
+            <div class="row"><dt><kbd>Leader</kbd> <kbd>F</kbd></dt><dd>Fernファイルドロワーを開閉</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>P</kbd></dt><dd>fzfでファイル検索</dd></div>
+            <div class="row"><dt><kbd>Esc</kbd> <kbd>Esc</kbd></dt><dd>検索ハイライトを解除</dd></div>
+            <div class="row"><dt><kbd>Space</kbd> <kbd>Space</kbd></dt><dd>カーソル下の単語をハイライト</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Edit &amp; move</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>現在行または選択範囲を上下へ移動</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>T</kbd></dt><dd>挿入モードで直前の2文字を入れ替え</dd></div>
+            <div class="row"><dt><kbd>#</kbd></dt><dd>選択中の単語を置換するコマンドを準備</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Move &amp; mode</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右へ移動</dd></div>
+            <div class="row"><dt><kbd>W</kbd> / <kbd>B</kbd></dt><dd>次 / 前の単語へ移動</dd></div>
+            <div class="row"><dt><kbd>0</kbd> / <kbd>$</kbd></dt><dd>行頭 / 行末へ移動</dd></div>
+            <div class="row"><dt><kbd>G</kbd> <kbd>G</kbd> / <kbd>G</kbd></dt><dd>ファイル先頭 / 末尾へ移動</dd></div>
+            <div class="row"><dt><kbd>I</kbd> / <kbd>A</kbd></dt><dd>カーソル位置 / 直後から挿入モード</dd></div>
+            <div class="row"><dt><kbd>O</kbd></dt><dd>下に新しい行を作って挿入</dd></div>
+            <div class="row"><dt><kbd>Esc</kbd></dt><dd>ノーマルモードへ戻る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Edit &amp; command</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>D</kbd> <kbd>D</kbd></dt><dd>現在行を削除</dd></div>
+            <div class="row"><dt><kbd>Y</kbd> <kbd>Y</kbd> / <kbd>P</kbd></dt><dd>現在行をコピー / 貼り付け</dd></div>
+            <div class="row"><dt><kbd>U</kbd> / <kbd>Ctrl</kbd> <kbd>R</kbd></dt><dd>Undo / Redo</dd></div>
+            <div class="row"><dt><kbd>/</kbd></dt><dd>前方検索。<kbd>N</kbd> / <kbd>⇧</kbd><kbd>N</kbd>で次 / 前</dd></div>
+            <div class="row"><dt><code>:w</code> / <code>:q</code></dt><dd>保存 / 終了</dd></div>
+            <div class="row"><dt><code>:wq</code></dt><dd>保存して終了</dd></div>
+            <div class="row"><dt><code>:q!</code></dt><dd>変更を破棄して終了</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Fern preview</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>P</kbd></dt><dd>プレビューを切り替え</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>P</kbd></dt><dd>自動プレビューを切り替え</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>D</kbd> / <kbd>U</kbd></dt><dd>プレビューを半画面ずつ上下スクロール</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Editor defaults</h3>
+          <div class="pills">
+            <span class="pill">行番号</span>
+            <span class="pill">カーソル行</span>
+            <span class="pill">マウス操作</span>
+            <span class="pill">swap / backupなし</span>
+            <span class="pill">smart indent</span>
+            <span class="pill">タブ幅2が基本</span>
+            <span class="pill">大文字を含むとcase-sensitive検索</span>
+            <span class="pill">インクリメンタル検索</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="starship" data-search-section>
+      <div class="section-head">
+        <h2>Starship prompt</h2>
+        <p class="section-note">上段に環境、入力行は静かに</p>
+      </div>
+      <div class="grid">
+        <article class="card wide" data-search-card>
+          <h3>Layout</h3>
+          <div class="prompt"><span>…/dotfiles  </span><span class="c-red"> feature/example</span> <span class="c-yellow">*2+1⇡2</span>                     <span class="c-cyan"> v3.11 (.venv)</span> <span class="c-purple">󱃾 minikube (default)</span>
+<span>❯</span>                                                               <span class="c-red">✘ 1</span> <span>3s</span> <span class="c-cyan">⚙ 1</span></div>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Git status</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>*N</code> / <code>+N</code></dt><dd>変更済み / ステージ済み</dd></div>
+            <div class="row"><dt><code>?N</code> / <code>$N</code></dt><dd>未追跡 / stash</dd></div>
+            <div class="row"><dt><code>⇡N</code> / <code>⇣N</code></dt><dd>remoteより先行 / 遅延</dd></div>
+            <div class="row"><dt><code>~N</code> / <code>✘N</code></dt><dd>競合 / 削除</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Conditional modules</h3>
+          <dl class="rows">
+            <div class="row"><dt><span class="c-red">✘ 1</span></dt><dd>直前コマンドの終了コードが0以外</dd></div>
+            <div class="row"><dt><code>3s</code></dt><dd>コマンド実行時間が3秒以上</dd></div>
+            <div class="row"><dt><span class="c-cyan">⚙ 1</span></dt><dd>バックグラウンドジョブあり</dd></div>
+            <div class="row"><dt><span class="c-red">⛔ production</span></dt><dd>prod / production context</dd></div>
+            <div class="row"><dt><span class="c-yellow">󱃾 staging</span></dt><dd>stg / staging context</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="settings" data-search-section>
+      <div class="section-head">
+        <h2>Files &amp; reload</h2>
+        <p class="section-note">変更場所を迷わないための地図</p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Source → destination</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>zsh/.zshrc</code></dt><dd><code>~/.zshrc</code></dd></div>
+            <div class="row"><dt><code>ghostty/config</code></dt><dd><code>~/.config/ghostty/config</code></dd></div>
+            <div class="row"><dt><code>tmux/.tmux.conf</code></dt><dd><code>~/.tmux.conf</code></dd></div>
+            <div class="row"><dt><code>starship/starship.toml</code></dt><dd><code>~/.config/starship.toml</code></dd></div>
+            <div class="row"><dt><code>vim/</code></dt><dd><code>~/.vim</code> / <code>~/.config/nvim</code></dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Reload &amp; setup</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>zsh install.sh</code></dt><dd>依存導入とシンボリックリンクをまとめて設定</dd></div>
+            <div class="row"><dt><code>source ~/.zshrc</code></dt><dd>Zsh / Starshipを再読み込み</dd></div>
+            <div class="row"><dt><code>tmux source-file ~/.tmux.conf</code></dt><dd>tmux設定を再読み込み</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>,</kbd></dt><dd>Ghostty設定を再読み込み</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">
+      Source of truth: <code>zsh/.zshrc</code>, <code>ghostty/config</code>,
+      <code>tmux/.tmux.conf</code>, <code>starship/starship.toml</code>, <code>vim/</code>.
+      ブラウザの印刷機能でPDF化できます。
+    </div>
+  </footer>
+
+  <script>
+    const input = document.querySelector("#search");
+    const cards = [...document.querySelectorAll("[data-search-card]")];
+    const sections = [...document.querySelectorAll("[data-search-section]")];
+    const empty = document.querySelector("#empty");
+
+    function normalize(value) {
+      return value.toLocaleLowerCase("ja").normalize("NFKC");
+    }
+
+    function filterCards() {
+      const terms = normalize(input.value).trim().split(/\s+/).filter(Boolean);
+      let visibleCards = 0;
+
+      for (const card of cards) {
+        const text = normalize(card.textContent);
+        const visible = terms.every((term) => text.includes(term));
+        card.classList.toggle("is-hidden", !visible);
+        if (visible) visibleCards += 1;
+      }
+
+      for (const section of sections) {
+        const hasVisibleCard = [...section.querySelectorAll("[data-search-card]")]
+          .some((card) => !card.classList.contains("is-hidden"));
+        section.classList.toggle("is-hidden", !hasVisibleCard);
+      }
+
+      empty.style.display = visibleCards === 0 ? "block" : "none";
+    }
+
+    input.addEventListener("input", filterCards);
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "/" && document.activeElement !== input) {
+        event.preventDefault();
+        input.focus();
+      }
+      if (event.key === "Escape" && document.activeElement === input) {
+        input.value = "";
+        input.blur();
+        filterCards();
+      }
+    });
+  </script>
+</body>
+</html>

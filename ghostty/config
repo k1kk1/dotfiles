@@ -1,0 +1,64 @@
+# Ghostty 設定
+# dotfiles/ghostty/config -> ~/.config/ghostty/config
+
+# ==============================================================================
+# Font
+# ==============================================================================
+
+# Nerd Font 対応の HackGen Console NF を使用
+# Starship のアイコン（git branch など）を正しく表示するために必要
+font-family = HackGen Console NF
+font-size = 12
+
+# ==============================================================================
+# Window
+# ==============================================================================
+
+# 少し深めの黒を基調にした背景色と透過
+background = #0b0b0b
+background-opacity = 0.85
+
+# 1タブ時は専用のタブ列を常設せず、背景と一体化したタイトルバーにする。
+# hiddenではmacOSのタブを利用できず、Cmd+Tが新規ウィンドウになる。
+macos-titlebar-style = transparent
+
+# タイトルバーの装飾を減らし、タイトル文字列だけを表示する
+macos-window-buttons = hidden
+macos-titlebar-proxy-icon = hidden
+
+# Option/Alt を Meta として送る
+# fzf の Alt-c などを使うために必要
+macos-option-as-alt = true
+
+# ==============================================================================
+# Appearance
+# ==============================================================================
+
+# カーソル
+cursor-style = block
+cursor-style-blink = false
+
+# テキスト選択はtmuxと同じ、少し落ち着いた青に揃える。
+selection-background = #4fa7c2
+selection-foreground = #17130f
+
+# ==============================================================================
+# Alerts
+# ==============================================================================
+
+# BEL受信時は Ghostty 固有のタイトル通知も使い、
+# tmux 側の Nerd Font 通知と併用する。
+bell-features = system,attention,title,no-border
+
+# OSC 9 / OSC 777によるデスクトップ通知を許可する。
+desktop-notifications = true
+
+# ==============================================================================
+# Keybinds
+# ==============================================================================
+
+# Quick Terminal を Option+Space で開閉
+keybind = global:alt+space=toggle_quick_terminal
+
+# 同じウィンドウ内に新しいタブを作成
+keybind = cmd+t=new_tab

@@ -14,8 +14,8 @@ font-size = 12
 # Window
 # ==============================================================================
 
-# 背景色と透過（WezTerm の 0.85 に合わせる）
-background = #1c1c2e
+# 少し深めの黒を基調にした背景色と透過
+background = #0b0b0b
 background-opacity = 0.85
 
 # 1タブ時は専用のタブ列を常設せず、背景と一体化したタイトルバーにする。
@@ -38,8 +38,8 @@ macos-option-as-alt = true
 cursor-style = block
 cursor-style-blink = false
 
-# テキスト選択はtmuxのアクセントと同じ水色に揃える。
-selection-background = #59d8ff
+# テキスト選択はtmuxと同じ、少し落ち着いた青に揃える。
+selection-background = #4fa7c2
 selection-foreground = #17130f
 
 # ==============================================================================

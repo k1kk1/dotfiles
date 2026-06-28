@@ -370,6 +370,41 @@
             <div class="row"><dt>Option key</dt><dd>OptionをAlt / Metaとして送信</dd></div>
           </dl>
         </article>
+        <article class="card" data-search-card>
+          <h3>Default · Window &amp; tabs</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>N</kbd></dt><dd>新しいウィンドウ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>W</kbd></dt><dd>現在のsurface（タブ・split・ウィンドウ）を閉じる</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd></dt><dd>現在のウィンドウを閉じる</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>[</kbd> / <kbd>]</kbd></dt><dd>前 / 次のタブ</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>Tab</kbd></dt><dd>次のタブ。Shift付きで前のタブ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>1…9</kbd></dt><dd>指定タブへ移動。9は最後のタブ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>Enter</kbd></dt><dd>フルスクリーン切り替え</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Splits</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>D</kbd></dt><dd>右方向にsplit</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>D</kbd></dt><dd>下方向にsplit</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>[</kbd> / <kbd>]</kbd></dt><dd>前 / 次のsplitへ移動</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⌥</kbd> <kbd>矢印</kbd></dt><dd>方向を指定してsplitへ移動</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>Ctrl</kbd> <kbd>矢印</kbd></dt><dd>splitを10pxずつリサイズ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>Enter</kbd></dt><dd>現在のsplitをズーム</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Terminal</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>C</kbd> / <kbd>V</kbd></dt><dd>コピー / ペースト</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>+</kbd> / <kbd>-</kbd></dt><dd>フォントサイズを拡大 / 縮小</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>0</kbd></dt><dd>フォントサイズをリセット</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>K</kbd></dt><dd>画面をクリア</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>F</kbd></dt><dd>ターミナル内検索を開始</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>G</kbd></dt><dd>次の検索結果。Shift付きで前へ</dd></div>
+            <div class="row"><dt><kbd>⌘</kbd> <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>前 / 次のプロンプトへジャンプ</dd></div>
+          </dl>
+        </article>
       </div>
     </section>
 
@@ -398,6 +433,16 @@
             <div class="row"><dt><kbd>Ctrl</kbd> <kbd>Y</kbd></dt><dd>最後に削除した文字列を貼り付け</dd></div>
             <div class="row"><dt><kbd>→</kbd> / <kbd>End</kbd></dt><dd>autosuggestionをすべて採用</dd></div>
             <div class="row"><dt><kbd>Alt</kbd> <kbd>F</kbd></dt><dd>autosuggestionを1単語分採用</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Emacs keymap</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>B</kbd> / <kbd>F</kbd></dt><dd>カーソルを1文字戻す / 進める</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>P</kbd> / <kbd>N</kbd></dt><dd>前 / 次の履歴</dd></div>
+            <div class="row"><dt><kbd>Backspace</kbd></dt><dd>カーソル前の1文字を削除</dd></div>
+            <div class="row"><dt><kbd>Ctrl</kbd> <kbd>_</kbd></dt><dd>直前の編集を取り消す</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>B</kbd> / <kbd>F</kbd></dt><dd>単語単位で戻る / 進む</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -457,21 +502,35 @@
       </div>
       <div class="grid">
         <article class="card" data-search-card>
-          <h3>Without prefix</h3>
+          <h3>Windows &amp; pane navigation</h3>
           <dl class="rows">
-            <div class="row"><dt><kbd>Shift</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>前 / 次のウィンドウへ移動</dd></div>
-            <div class="row"><dt><kbd>Alt</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右のペインへ移動</dd></div>
+            <div class="row"><dt><kbd>Shift</kbd> <kbd>←</kbd> / <kbd>→</kbd></dt><dd>前 / 次のウィンドウへ移動（Prefix不要）</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>N</kbd> / <kbd>P</kbd></dt><dd>次 / 前のウィンドウへ移動</dd></div>
+            <div class="row"><dt><kbd>Alt</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右のペインへ移動（Prefix不要）</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>矢印</kbd></dt><dd>方向を指定してペインへ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>O</kbd></dt><dd>次のペインへ移動</dd></div>
             <div class="row"><dt>Trackpad scroll</dt><dd>上スクロールでcopy modeへ入り、履歴を表示</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
-          <h3>With prefix</h3>
+          <h3>Pane operations</h3>
           <dl class="rows">
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>|</kbd></dt><dd>左右にペイン分割</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>-</kbd></dt><dd>上下にペイン分割</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Z</kbd></dt><dd>現在のペインをズーム / 元に戻す</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>[</kbd></dt><dd>copy modeへ入る</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>S</kbd></dt><dd>複数ペインへの同時入力を切り替え</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>X</kbd></dt><dd>現在のペインを終了</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Ctrl</kbd> <kbd>X</kbd></dt><dd>現在のウィンドウを終了</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Windows &amp; session</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>C</kbd></dt><dd>新しいウィンドウを作成</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>0…9</kbd></dt><dd>番号を指定してウィンドウへ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>&amp;</kbd></dt><dd>確認後、現在のウィンドウを終了</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>D</kbd></dt><dd>セッションを維持したままdetach</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -516,6 +575,30 @@
             <div class="row"><dt><kbd>Ctrl</kbd> <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>現在行または選択範囲を上下へ移動</dd></div>
             <div class="row"><dt><kbd>Ctrl</kbd> <kbd>T</kbd></dt><dd>挿入モードで直前の2文字を入れ替え</dd></div>
             <div class="row"><dt><kbd>#</kbd></dt><dd>選択中の単語を置換するコマンドを準備</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Move &amp; mode</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右へ移動</dd></div>
+            <div class="row"><dt><kbd>W</kbd> / <kbd>B</kbd></dt><dd>次 / 前の単語へ移動</dd></div>
+            <div class="row"><dt><kbd>0</kbd> / <kbd>$</kbd></dt><dd>行頭 / 行末へ移動</dd></div>
+            <div class="row"><dt><kbd>G</kbd> <kbd>G</kbd> / <kbd>G</kbd></dt><dd>ファイル先頭 / 末尾へ移動</dd></div>
+            <div class="row"><dt><kbd>I</kbd> / <kbd>A</kbd></dt><dd>カーソル位置 / 直後から挿入モード</dd></div>
+            <div class="row"><dt><kbd>O</kbd></dt><dd>下に新しい行を作って挿入</dd></div>
+            <div class="row"><dt><kbd>Esc</kbd></dt><dd>ノーマルモードへ戻る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Default · Edit &amp; command</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>D</kbd> <kbd>D</kbd></dt><dd>現在行を削除</dd></div>
+            <div class="row"><dt><kbd>Y</kbd> <kbd>Y</kbd> / <kbd>P</kbd></dt><dd>現在行をコピー / 貼り付け</dd></div>
+            <div class="row"><dt><kbd>U</kbd> / <kbd>Ctrl</kbd> <kbd>R</kbd></dt><dd>Undo / Redo</dd></div>
+            <div class="row"><dt><kbd>/</kbd></dt><dd>前方検索。<kbd>N</kbd> / <kbd>⇧</kbd><kbd>N</kbd>で次 / 前</dd></div>
+            <div class="row"><dt><code>:w</code> / <code>:q</code></dt><dd>保存 / 終了</dd></div>
+            <div class="row"><dt><code>:wq</code></dt><dd>保存して終了</dd></div>
+            <div class="row"><dt><code>:q!</code></dt><dd>変更を破棄して終了</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>

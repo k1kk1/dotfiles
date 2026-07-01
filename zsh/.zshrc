@@ -217,7 +217,7 @@ alias gpl='git pull --ff-only'
 
 # infra
 alias k='kubectl'
-alias tf='terraform'
+alias km="bash ~/src/dotfiles/scripts/k8s-monitor/k8s-monitor.sh"
 
 # ==============================================================================
 # Functions

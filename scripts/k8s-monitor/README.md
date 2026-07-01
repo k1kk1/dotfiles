@@ -129,15 +129,9 @@ kubectl get events
 +----------------------+----------------------+
 ```
 
-それぞれ
+それぞれ通常のログイン shell を開きます。
 
-```
-alias k="kubectl --context ... --namespace ..."
-```
-
-が設定されています。
-
-そのため
+このリポジトリでは `.zshrc` 側で `k` alias を定義しているため、そのまま
 
 ```
 k get pod
@@ -151,16 +145,20 @@ k describe pod
 
 # Ctrl-C の扱い
 
-監視用 pane は誤操作防止のため Ctrl-C を無効化しています。
+監視用 pane でも Ctrl-C はそのまま利用できます。
 
-対象
+通常は長時間動かし続ける想定ですが、手元で一時停止や再実行をしたいときは
+pane に入って Ctrl-C で止められます。
 
-- stern
-- watch
+stern / watch pane は終了しても pane 自体は残るので、
 
-これらは長時間動かし続けることを前提としています。
+```
+Prefix + R
+```
 
-停止したい場合は
+で最後の監視コマンドをそのまま復活できます。
+
+監視 pane 自体を閉じたい場合は
 
 ```
 Prefix + X
@@ -168,7 +166,7 @@ Prefix + X
 
 で pane を閉じます。
 
-free pane は通常通り Ctrl-C が利用できます。
+free pane も通常通り Ctrl-C が利用できます。
 
 ---
 
@@ -320,7 +318,7 @@ Session · Window · Directory
 |ALERT_COOLDOWN_SECONDS|通知抑止時間|30|
 |STERN_MAX_LOG_REQUESTS|stern の `--max-log-requests`|未指定|
 |STERN_EXCLUDE_REGEX|stern の `--exclude` 正規表現|空|
-|STERN_INCLUDE_REGEX|stern の `--include` 正規表現|`(?i)(error|exception|panic)`|
+|STERN_INCLUDE_REGEX|stern の `--include` 正規表現|`ERROR`|
 |LOG_FILTER_REGEX|通知判定用の正規表現|`STERN_INCLUDE_REGEX` と同じ|
 
 ---

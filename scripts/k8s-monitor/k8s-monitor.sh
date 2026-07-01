@@ -13,6 +13,13 @@ WATCH_INTERVAL="${WATCH_INTERVAL:-5}"
 EVENT_LINES="${EVENT_LINES:-15}"
 ALERT_COOLDOWN_SECONDS="${ALERT_COOLDOWN_SECONDS:-30}"
 
+STERN_MAX_LOG_REQUESTS="${STERN_MAX_LOG_REQUESTS:-}"
+# sternのexclude（正規表現）
+STERN_EXCLUDE_REGEX="${STERN_EXCLUDE_REGEX:-""}"
+# sternのinclude / Alertの検知条件 （正規表現）
+STERN_INCLUDE_REGEX="${STERN_INCLUDE_REGEX:-ERROR}"
+LOG_FILTER_REGEX="${LOG_FILTER_REGEX:-${STERN_INCLUDE_REGEX}}"
+
 SCRIPT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
 
 # ==============================================================================
@@ -38,6 +45,24 @@ require_kube_context() {
     }
 }
 
+# grep -E で使う正規表現が妥当か確認する。
+require_valid_grep_regex() {
+  local regex="$1"
+  local label="$2"
+  local status=0
+
+  printf '' | grep -Eq "$regex" >/dev/null 2>&1 || status=$?
+
+  case "$status" in
+    0|1)
+      ;;
+    *)
+      echo "invalid grep regex in ${label}: ${regex}" >&2
+      exit 1
+      ;;
+  esac
+}
+
 # 起動に必要な外部コマンドと Kubernetes context をまとめて確認する。
 require_all() {
   local command_name
@@ -48,26 +73,7 @@ require_all() {
 
   require_kube_context "$KKS_CONTEXT"
   require_kube_context "$SSK_CONTEXT"
-}
-
-# ==============================================================================
-# ctrl_c_*: Ctrl-C 制御
-# ==============================================================================
-
-# watch などの監視コマンド用に、Ctrl-C を無効化する前処理を文字列として返す。
-ctrl_c_disable_prefix() {
-  printf 'trap "" INT; stty intr undef 2>/dev/null || true; '
-}
-
-# 現在のシェルで Ctrl-C を無効化する。
-ctrl_c_disable_current_shell() {
-  trap '' INT
-  stty intr undef 2>/dev/null || true
-}
-
-# プロセス終了時に Ctrl-C の端末設定を戻す。
-ctrl_c_restore_on_exit() {
-  trap 'stty intr ^C 2>/dev/null || true' EXIT
+  require_valid_grep_regex "$LOG_FILTER_REGEX" "LOG_FILTER_REGEX"
 }
 
 # ==============================================================================
@@ -79,9 +85,22 @@ pane_setup() {
   local pane_id="$1"
   local title="$2"
   local command="$3"
+  local remain_on_exit="${4:-off}"
+  local remain_on_exit_format
 
   tmux select-pane -t "$pane_id" -T "$title"
-  tmux send-keys -t "$pane_id" "$command" C-m
+  tmux set-option -p -t "$pane_id" remain-on-exit "$remain_on_exit"
+
+  if [[ "$remain_on_exit" == "on" ]]; then
+    printf -v remain_on_exit_format \
+      'Stopped: %s | Prefix + R で再開 | Prefix + X で閉じる' \
+      "$title"
+    tmux set-option -p -t "$pane_id" remain-on-exit-format "$remain_on_exit_format"
+  else
+    tmux set-option -p -u -t "$pane_id" remain-on-exit-format
+  fi
+
+  tmux respawn-pane -k -t "$pane_id" "$command"
 }
 
 # ==============================================================================
@@ -94,8 +113,7 @@ cmd_pod_watch() {
   local namespace="$2"
 
   printf \
-    '%sexec watch --interval %q --no-title --exec kubectl --context %q get pods --namespace %q --output=wide' \
-    "$(ctrl_c_disable_prefix)" \
+    'watch --interval %q --no-title --exec kubectl --context %q get pods --namespace %q' \
     "$WATCH_INTERVAL" \
     "$context" \
     "$namespace"
@@ -114,8 +132,7 @@ cmd_event_watch() {
     "$EVENT_LINES"
 
   printf \
-    '%sexec watch --interval %q --no-title %q' \
-    "$(ctrl_c_disable_prefix)" \
+    'watch --interval %q --no-title %q' \
     "$WATCH_INTERVAL" \
     "$event_command"
 }
@@ -134,30 +151,44 @@ cmd_stern() {
 }
 
 # 手動操作 pane 用のシェル起動コマンドを生成する。
-# 対象 context/namespace 固定の alias `k` を用意する。
 cmd_free_shell() {
-  local context="$1"
-  local namespace="$2"
-  local kubectl_alias
-
-  printf -v kubectl_alias \
-    'kubectl --context %q --namespace %q' \
-    "$context" \
-    "$namespace"
-
-  printf \
-    'alias k=%q; exec ${SHELL:-bash}' \
-    "$kubectl_alias"
+  printf 'exec ${SHELL:-bash} -l'
 }
 
 # ==============================================================================
 # stern_*: stern 実行中の監視・通知処理
 # ==============================================================================
 
+# 環境変数から stern の追加引数を組み立てる。
+stern_build_args() {
+  local -a args
+
+  args=(
+    --context "$1"
+    --namespace "$2"
+    --since 2m
+    --tail 5
+    --include "$STERN_INCLUDE_REGEX"
+    --color always
+    --diff-container
+  )
+
+  if [[ -n "$STERN_EXCLUDE_REGEX" ]]; then
+    args+=(--exclude "$STERN_EXCLUDE_REGEX")
+  fi
+
+  if [[ -n "$STERN_MAX_LOG_REQUESTS" ]]; then
+    args+=(--max-log-requests "$STERN_MAX_LOG_REQUESTS")
+  fi
+
+  printf '%s\0' "${args[@]}"
+}
+
 # stern が ERROR 系ログを検知したことを tmux option に一時的に保存する。
 stern_show_alert_status() {
   local system_name="$1"
-  local alert_value="${system_name} $(date '+%H:%M:%S')"
+  local alert_time="$2"
+  local alert_value="${system_name} ${alert_time}"
   local window_id
 
   window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}')"
@@ -191,13 +222,14 @@ stern_notify_alert() {
   local system_name="$1"
   local context="$2"
   local namespace="$3"
+  local alert_timestamp="$4"
 
   printf '\a'
 
   if [[ "$(uname -s)" == "Darwin" ]] &&
     command -v osascript >/dev/null 2>&1; then
     osascript -e \
-      "display notification \"ERRORログを検出しました\" with title \"Kubernetes stern alert [${system_name}]\" subtitle \"${context} / ${namespace}\"" \
+      "display notification \"ERRORログを検出しました (${alert_timestamp})\" with title \"Kubernetes stern alert [${system_name}]\" subtitle \"${context} / ${namespace}\"" \
       >/dev/null 2>&1 &
   fi
 }
@@ -210,17 +242,22 @@ stern_process_lines() {
   local last_alert_at=0
   local line
   local now
+  local alert_time
+  local alert_timestamp
 
   while IFS= read -r line; do
     printf '%s\n' "$line"
 
-    printf '%s\n' "$line" | grep -Eiq 'error|exception|panic' || continue
+    printf '%s\n' "$line" | grep -Eq "$LOG_FILTER_REGEX" || continue
 
     now="$(date +%s)"
     (( now - last_alert_at < ALERT_COOLDOWN_SECONDS )) && continue
 
-    stern_notify_alert "$system_name" "$context" "$namespace"
-    stern_show_alert_status "$system_name"
+    alert_time="$(date '+%H:%M:%S')"
+    alert_timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    stern_notify_alert "$system_name" "$context" "$namespace" "$alert_timestamp"
+    stern_show_alert_status "$system_name" "$alert_time"
 
     last_alert_at="$now"
   done
@@ -231,19 +268,14 @@ stern_run() {
   local system_name="$1"
   local context="$2"
   local namespace="$3"
+  local -a stern_args
 
-  ctrl_c_restore_on_exit
-  ctrl_c_disable_current_shell
   clear
 
+  mapfile -d '' -t stern_args < <(stern_build_args "$context" "$namespace")
+
   stern \
-    --context "$context" \
-    --namespace "$namespace" \
-    --since 2m \
-    --tail 5 \
-    --include '(?i)(error|exception|panic)' \
-    --color always \
-    --diff-container \
+    "${stern_args[@]}" \
     . 2>&1 | stern_process_lines "$system_name" "$context" "$namespace"
 }
 
@@ -257,11 +289,19 @@ window_create_stern() {
   local left_pane
   local right_pane
 
-  left_pane="$(
-    tmux new-session -d -P -F '#{pane_id}' \
-      -s "$SESSION_NAME" \
-      -n stern
-  )"
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    left_pane="$(
+      tmux new-window -P -F '#{pane_id}' \
+        -t "$SESSION_NAME" \
+        -n stern
+    )"
+  else
+    left_pane="$(
+      tmux new-session -d -P -F '#{pane_id}' \
+        -s "$SESSION_NAME" \
+        -n stern
+    )"
+  fi
 
   right_pane="$(
     tmux split-window -h -P -F '#{pane_id}' \
@@ -271,12 +311,14 @@ window_create_stern() {
   pane_setup \
     "$left_pane" \
     "KKS: ${KKS_NAMESPACE} · stern" \
-    "$(cmd_stern KKS "$KKS_CONTEXT" "$KKS_NAMESPACE")"
+    "$(cmd_stern KKS "$KKS_CONTEXT" "$KKS_NAMESPACE")" \
+    on
 
   pane_setup \
     "$right_pane" \
     "SSK: ${SSK_NAMESPACE} · stern" \
-    "$(cmd_stern SSK "$SSK_CONTEXT" "$SSK_NAMESPACE")"
+    "$(cmd_stern SSK "$SSK_CONTEXT" "$SSK_NAMESPACE")" \
+    on
 
   tmux select-layout -t "${SESSION_NAME}:stern" even-horizontal
 }
@@ -313,22 +355,26 @@ window_create_watch() {
   pane_setup \
     "$kks_pod_pane" \
     "KKS: ${KKS_NAMESPACE} · pods" \
-    "$(cmd_pod_watch "$KKS_CONTEXT" "$KKS_NAMESPACE")"
+    "$(cmd_pod_watch "$KKS_CONTEXT" "$KKS_NAMESPACE")" \
+    on
 
   pane_setup \
     "$kks_event_pane" \
     "KKS: ${KKS_NAMESPACE} · events" \
-    "$(cmd_event_watch "$KKS_CONTEXT" "$KKS_NAMESPACE")"
+    "$(cmd_event_watch "$KKS_CONTEXT" "$KKS_NAMESPACE")" \
+    on
 
   pane_setup \
     "$ssk_pod_pane" \
     "SSK: ${SSK_NAMESPACE} · pods" \
-    "$(cmd_pod_watch "$SSK_CONTEXT" "$SSK_NAMESPACE")"
+    "$(cmd_pod_watch "$SSK_CONTEXT" "$SSK_NAMESPACE")" \
+    on
 
   pane_setup \
     "$ssk_event_pane" \
     "SSK: ${SSK_NAMESPACE} · events" \
-    "$(cmd_event_watch "$SSK_CONTEXT" "$SSK_NAMESPACE")"
+    "$(cmd_event_watch "$SSK_CONTEXT" "$SSK_NAMESPACE")" \
+    on
 }
 
 # free ウィンドウを作成する。
@@ -351,12 +397,14 @@ window_create_free() {
   pane_setup \
     "$left_pane" \
     "KKS: ${KKS_NAMESPACE} · free" \
-    "$(cmd_free_shell "$KKS_CONTEXT" "$KKS_NAMESPACE")"
+    "$(cmd_free_shell)" \
+    off
 
   pane_setup \
     "$right_pane" \
     "SSK: ${SSK_NAMESPACE} · free" \
-    "$(cmd_free_shell "$SSK_CONTEXT" "$SSK_NAMESPACE")"
+    "$(cmd_free_shell)" \
+    off
 
   tmux select-layout -t "${SESSION_NAME}:free" even-horizontal
 }
@@ -373,6 +421,52 @@ session_stop() {
   else
     echo "not running: $SESSION_NAME"
   fi
+}
+
+# 監視用 tmux セッションが起動中であることを確認する。
+session_require_running() {
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo "not running: $SESSION_NAME" >&2
+    exit 1
+  fi
+}
+
+# 指定した window を再構築する。
+session_restart_window() {
+  local window_name="$1"
+  local create_function="$2"
+  local temp_window_name="__k8s_monitor_rebuild_${window_name}_$$"
+  local window_count
+  local created_temp_window=0
+
+  session_require_running
+
+  if tmux list-windows -t "$SESSION_NAME" -F '#{window_name}' | grep -Fxq "$window_name"; then
+    window_count="$(tmux list-windows -t "$SESSION_NAME" | wc -l | tr -d ' ')"
+
+    if [[ "$window_count" == "1" ]]; then
+      tmux new-window -d -t "$SESSION_NAME" -n "$temp_window_name"
+      created_temp_window=1
+    fi
+
+    tmux kill-window -t "${SESSION_NAME}:${window_name}"
+  fi
+
+  "$create_function"
+  tmux select-window -t "${SESSION_NAME}:${window_name}"
+
+  if [[ "$created_temp_window" == "1" ]]; then
+    tmux kill-window -t "${SESSION_NAME}:${temp_window_name}"
+  fi
+}
+
+# stern / watch / free をまとめて再構築する。
+session_restart_all_windows() {
+  session_require_running
+  session_restart_window stern window_create_stern
+  session_restart_window watch window_create_watch
+  session_restart_window free window_create_free
+  tmux select-window -t "${SESSION_NAME}:stern"
 }
 
 # 監視用 tmux セッション全体を作成する。
@@ -403,6 +497,11 @@ main() {
       require_command tmux
       session_stop
       ;;
+    --restart)
+      require_all
+      require_command tmux
+      session_restart_all_windows
+      ;;
     "")
       require_all
 
@@ -415,7 +514,7 @@ main() {
       tmux attach-session -t "$SESSION_NAME"
       ;;
     *)
-      echo "Usage: tmp/scripts/k8s-monitor.sh [--kill]" >&2
+      echo "Usage: tmp/scripts/k8s-monitor.sh [--kill|--restart]" >&2
       exit 2
       ;;
   esac

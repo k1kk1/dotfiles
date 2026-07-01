@@ -86,9 +86,20 @@ pane_setup() {
   local title="$2"
   local command="$3"
   local remain_on_exit="${4:-off}"
+  local remain_on_exit_format
 
   tmux select-pane -t "$pane_id" -T "$title"
   tmux set-option -p -t "$pane_id" remain-on-exit "$remain_on_exit"
+
+  if [[ "$remain_on_exit" == "on" ]]; then
+    printf -v remain_on_exit_format \
+      'Stopped: %s | Prefix + R で再開 | Prefix + X で閉じる' \
+      "$title"
+    tmux set-option -p -t "$pane_id" remain-on-exit-format "$remain_on_exit_format"
+  else
+    tmux set-option -p -u -t "$pane_id" remain-on-exit-format
+  fi
+
   tmux respawn-pane -k -t "$pane_id" "$command"
 }
 
@@ -278,11 +289,19 @@ window_create_stern() {
   local left_pane
   local right_pane
 
-  left_pane="$(
-    tmux new-session -d -P -F '#{pane_id}' \
-      -s "$SESSION_NAME" \
-      -n stern
-  )"
+  if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    left_pane="$(
+      tmux new-window -P -F '#{pane_id}' \
+        -t "$SESSION_NAME" \
+        -n stern
+    )"
+  else
+    left_pane="$(
+      tmux new-session -d -P -F '#{pane_id}' \
+        -s "$SESSION_NAME" \
+        -n stern
+    )"
+  fi
 
   right_pane="$(
     tmux split-window -h -P -F '#{pane_id}' \
@@ -404,6 +423,52 @@ session_stop() {
   fi
 }
 
+# 監視用 tmux セッションが起動中であることを確認する。
+session_require_running() {
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    echo "not running: $SESSION_NAME" >&2
+    exit 1
+  fi
+}
+
+# 指定した window を再構築する。
+session_restart_window() {
+  local window_name="$1"
+  local create_function="$2"
+  local temp_window_name="__k8s_monitor_rebuild_${window_name}_$$"
+  local window_count
+  local created_temp_window=0
+
+  session_require_running
+
+  if tmux list-windows -t "$SESSION_NAME" -F '#{window_name}' | grep -Fxq "$window_name"; then
+    window_count="$(tmux list-windows -t "$SESSION_NAME" | wc -l | tr -d ' ')"
+
+    if [[ "$window_count" == "1" ]]; then
+      tmux new-window -d -t "$SESSION_NAME" -n "$temp_window_name"
+      created_temp_window=1
+    fi
+
+    tmux kill-window -t "${SESSION_NAME}:${window_name}"
+  fi
+
+  "$create_function"
+  tmux select-window -t "${SESSION_NAME}:${window_name}"
+
+  if [[ "$created_temp_window" == "1" ]]; then
+    tmux kill-window -t "${SESSION_NAME}:${temp_window_name}"
+  fi
+}
+
+# stern / watch / free をまとめて再構築する。
+session_restart_all_windows() {
+  session_require_running
+  session_restart_window stern window_create_stern
+  session_restart_window watch window_create_watch
+  session_restart_window free window_create_free
+  tmux select-window -t "${SESSION_NAME}:stern"
+}
+
 # 監視用 tmux セッション全体を作成する。
 # stern / watch / free の3ウィンドウを作り、最後に stern を選択する。
 session_create_monitor() {
@@ -432,6 +497,11 @@ main() {
       require_command tmux
       session_stop
       ;;
+    --restart)
+      require_all
+      require_command tmux
+      session_restart_all_windows
+      ;;
     "")
       require_all
 
@@ -444,7 +514,7 @@ main() {
       tmux attach-session -t "$SESSION_NAME"
       ;;
     *)
-      echo "Usage: tmp/scripts/k8s-monitor.sh [--kill]" >&2
+      echo "Usage: tmp/scripts/k8s-monitor.sh [--kill|--restart]" >&2
       exit 2
       ;;
   esac

@@ -294,6 +294,12 @@ Session · Window · Directory
 ./k8s-monitor.sh --kill
 ```
 
+window をまとめて再構築
+
+```bash
+./k8s-monitor.sh --restart
+```
+
 ---
 
 # 必要コマンド

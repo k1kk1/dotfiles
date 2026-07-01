@@ -189,7 +189,8 @@ stern_build_args() {
 # stern が ERROR 系ログを検知したことを tmux option に一時的に保存する。
 stern_show_alert_status() {
   local system_name="$1"
-  local alert_value="${system_name} $(date '+%H:%M:%S')"
+  local alert_time="$2"
+  local alert_value="${system_name} ${alert_time}"
   local window_id
 
   window_id="$(tmux display-message -p -t "$TMUX_PANE" '#{window_id}')"
@@ -223,13 +224,14 @@ stern_notify_alert() {
   local system_name="$1"
   local context="$2"
   local namespace="$3"
+  local alert_timestamp="$4"
 
   printf '\a'
 
   if [[ "$(uname -s)" == "Darwin" ]] &&
     command -v osascript >/dev/null 2>&1; then
     osascript -e \
-      "display notification \"ERRORログを検出しました\" with title \"Kubernetes stern alert [${system_name}]\" subtitle \"${context} / ${namespace}\"" \
+      "display notification \"ERRORログを検出しました (${alert_timestamp})\" with title \"Kubernetes stern alert [${system_name}]\" subtitle \"${context} / ${namespace}\"" \
       >/dev/null 2>&1 &
   fi
 }
@@ -242,6 +244,8 @@ stern_process_lines() {
   local last_alert_at=0
   local line
   local now
+  local alert_time
+  local alert_timestamp
 
   while IFS= read -r line; do
     printf '%s\n' "$line"
@@ -251,8 +255,11 @@ stern_process_lines() {
     now="$(date +%s)"
     (( now - last_alert_at < ALERT_COOLDOWN_SECONDS )) && continue
 
-    stern_notify_alert "$system_name" "$context" "$namespace"
-    stern_show_alert_status "$system_name"
+    alert_time="$(date '+%H:%M:%S')"
+    alert_timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+
+    stern_notify_alert "$system_name" "$context" "$namespace" "$alert_timestamp"
+    stern_show_alert_status "$system_name" "$alert_time"
 
     last_alert_at="$now"
   done

@@ -16,6 +16,7 @@
       --cyan: #4fa7c2;
       --green: #8bd49c;
       --yellow: #e8c96b;
+      --orange: #e89b68;
       --red: #ff7a90;
       --purple: #c7a0ff;
       --shadow: 0 18px 50px rgb(0 0 0 / 24%);
@@ -92,15 +93,17 @@
 
     .toolbar-inner {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) 2fr;
+      grid-template-columns: minmax(240px, 1fr) auto;
       gap: 12px;
       align-items: center;
     }
 
+    .search-wrap { position: relative; }
+
     .search {
       width: 100%;
       min-height: 44px;
-      padding: 0 14px;
+      padding: 0 76px 0 14px;
       color: var(--text);
       background: var(--panel);
       border: 1px solid var(--line);
@@ -108,6 +111,124 @@
       outline: none;
       font: inherit;
     }
+
+    .search-hint {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      translate: 0 -50%;
+      color: var(--muted);
+      font-size: .72rem;
+      pointer-events: none;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .scope-filter {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    button {
+      color: inherit;
+      font: inherit;
+    }
+
+    .filter-button, .diff-toggle, .clear-button, .copy-button, .top-button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .filter-button {
+      min-height: 34px;
+      padding: 0 11px;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 8px;
+      font-size: .8rem;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .filter-button:hover, .filter-button[aria-pressed="true"] {
+      color: var(--text);
+      background: var(--panel-2);
+    }
+
+    .filter-button[data-scope="custom"][aria-pressed="true"] { color: var(--green); }
+    .filter-button[data-scope="default"][aria-pressed="true"] { color: var(--yellow); }
+
+    .diff-toggle {
+      min-height: 42px;
+      padding: 0 11px;
+      color: var(--orange);
+      background: rgb(232 155 104 / 9%);
+      border: 1px solid rgb(232 155 104 / 35%);
+      border-radius: 10px;
+      font-size: .78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .diff-toggle[aria-pressed="false"] {
+      color: var(--muted);
+      background: transparent;
+      border-color: var(--line);
+    }
+
+    .diff-toggle:hover { color: var(--text); }
+
+    .clear-button {
+      min-height: 42px;
+      padding: 0 12px;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 10px;
+      font-size: .82rem;
+    }
+
+    .clear-button:hover { color: var(--text); background: var(--panel); }
+
+    .result-bar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 18px 0 -14px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .section-nav {
+      margin-top: 14px;
+      padding-bottom: 4px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+    }
+    .legend span::before {
+      display: inline-block;
+      width: .55rem;
+      height: .55rem;
+      margin-right: 6px;
+      border-radius: 50%;
+      content: "";
+    }
+    .legend-custom::before { background: var(--green); }
+    .legend-default::before { background: var(--yellow); }
+    .legend-override::before { background: var(--orange); }
 
     .search:focus {
       border-color: var(--cyan);
@@ -174,6 +295,7 @@
     }
 
     .card {
+      position: relative;
       min-width: 0;
       padding: 19px;
       background: linear-gradient(145deg, rgb(36 36 58 / 94%), rgb(28 28 46 / 94%));
@@ -186,11 +308,26 @@
 
     .card h3 {
       margin: 0 0 14px;
+      padding-right: 94px;
       color: var(--cyan);
       font-size: .82rem;
       letter-spacing: .11em;
       text-transform: uppercase;
     }
+
+    .scope-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 3px 8px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      font-size: .66rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .scope-badge.custom { color: var(--green); }
+    .scope-badge.default { color: var(--yellow); }
 
     .rows {
       display: grid;
@@ -214,9 +351,56 @@
 
     .row:last-child { padding-bottom: 0; }
 
+    .row.has-override {
+      position: relative;
+      margin-inline: -8px;
+      padding-inline: 8px;
+      background: linear-gradient(90deg, rgb(232 155 104 / 8%), transparent 62%);
+      border-left: 2px solid var(--orange);
+    }
+
     dt, dd { margin: 0; }
     dd { color: var(--muted); }
 
+    .setting-diff {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: center;
+      margin-top: 6px;
+      font-size: .72rem;
+      line-height: 1.45;
+    }
+
+    .diff-label {
+      color: var(--orange);
+      font-weight: 800;
+    }
+
+    .diff-value {
+      padding: 2px 6px;
+      color: var(--muted);
+      background: rgb(12 12 20 / 65%);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      font-family: "HackGen Console NF", "SFMono-Regular", Consolas, monospace;
+    }
+
+    .diff-value.current {
+      color: var(--text);
+      border-color: rgb(232 155 104 / 55%);
+    }
+
+    .diff-arrow { color: var(--orange); }
+
+    body.diff-off .setting-diff { display: none; }
+    body.diff-off .row.has-override {
+      margin-inline: 0;
+      padding-inline: 0;
+      background: transparent;
+      border-left: 0;
+    }
+    body.diff-off .legend-override { display: none; }
     kbd {
       display: inline-block;
       min-width: 1.8em;
@@ -238,6 +422,25 @@
       color: var(--green);
       overflow-wrap: anywhere;
     }
+
+    code[data-copy] {
+      padding: 2px 4px;
+      border-radius: 5px;
+      cursor: copy;
+    }
+    code[data-copy]:hover { background: rgb(139 212 156 / 10%); }
+
+    .copy-button {
+      float: right;
+      margin-left: 8px;
+      padding: 3px 7px;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: .68rem;
+    }
+    .copy-button:hover { color: var(--text); border-color: var(--cyan); }
 
     .prompt {
       padding: 18px;
@@ -290,9 +493,52 @@
       font-size: .85rem;
     }
 
+    .toast {
+      position: fixed;
+      z-index: 50;
+      right: 20px;
+      bottom: 20px;
+      padding: 10px 14px;
+      color: #11111b;
+      background: var(--green);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      font-size: .82rem;
+      font-weight: 800;
+      opacity: 0;
+      translate: 0 8px;
+      transition: .18s ease;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; translate: 0; }
+
+    .top-button {
+      position: fixed;
+      z-index: 15;
+      right: 20px;
+      bottom: 20px;
+      width: 42px;
+      height: 42px;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      translate: 0 8px;
+      transition: .18s ease;
+      pointer-events: none;
+    }
+    .top-button.show { opacity: 1; translate: 0; pointer-events: auto; }
+
     @media (max-width: 760px) {
       header { padding-top: 48px; }
       .toolbar-inner { grid-template-columns: 1fr; }
+      .controls { justify-content: space-between; }
+      .scope-filter { flex: 1 0 100%; }
+      .scope-filter .filter-button { flex: 1; }
+      .diff-toggle, .clear-button { flex: 1; }
+      .result-bar { align-items: start; flex-direction: column; gap: 4px; }
       .grid { grid-template-columns: 1fr; }
       .card.wide { grid-column: auto; }
       .section-head { align-items: start; flex-direction: column; gap: 4px; }
@@ -312,6 +558,7 @@
       body { background: #fff; font-size: 10pt; }
       header { padding-top: 18px; }
       .toolbar { display: none; }
+      .scope-badge, .copy-button, .top-button, .toast { display: none; }
       .card { break-inside: avoid; box-shadow: none; }
       section { margin-top: 28px; }
       main { padding-bottom: 20px; }
@@ -323,28 +570,49 @@
     <p class="eyebrow">Personal environment reference</p>
     <h1>Dotfiles<br>Cheat Sheet</h1>
     <p class="lead">
-      Ghostty、Zsh、tmux、Vim / Neovim、Starshipの現在の設定を、
+      Ghostty、Zsh、Git、tmux、Vim / Neovim、Starship、Kubernetes監視の現在の設定を、
       「思い出すまでが一番長い」順にまとめた早見表。
     </p>
   </header>
 
   <div class="toolbar">
     <div class="shell toolbar-inner">
-      <input id="search" class="search" type="search"
-        placeholder="キー、コマンド、説明を検索… 例: Ctrl-r / git / pane"
-        aria-label="チートシートを検索">
-      <nav aria-label="セクション">
-        <a href="#ghostty">Ghostty</a>
-        <a href="#zsh">Zsh</a>
-        <a href="#tmux">tmux</a>
-        <a href="#vim">Vim</a>
-        <a href="#starship">Starship</a>
-        <a href="#settings">設定</a>
-      </nav>
+      <div class="search-wrap">
+        <input id="search" class="search" type="search"
+          placeholder="キー、コマンド、説明を検索… 例: Ctrl-r / git / pane"
+          aria-label="チートシートを検索" autocomplete="off">
+        <span class="search-hint"><kbd>/</kbd> 検索</span>
+      </div>
+      <div class="controls">
+        <div class="scope-filter" role="group" aria-label="設定種別">
+          <button class="filter-button" type="button" data-scope="all" aria-pressed="true">すべて</button>
+          <button class="filter-button" type="button" data-scope="custom" aria-pressed="false">ユーザー設定</button>
+          <button class="filter-button" type="button" data-scope="default" aria-pressed="false">デフォルト</button>
+        </div>
+        <button id="diff-toggle" class="diff-toggle" type="button" aria-pressed="true">Diff ON</button>
+        <button id="clear" class="clear-button" type="button">リセット</button>
+      </div>
     </div>
   </div>
 
   <main class="shell">
+    <div class="result-bar" aria-live="polite">
+      <span id="result-count"></span>
+      <span class="legend">
+        <span class="legend-custom">dotfilesで変更</span>
+        <span class="legend-default">一般的な既定値</span>
+        <span class="legend-override">既定値を上書き</span>
+      </span>
+    </div>
+    <nav class="section-nav" aria-label="セクション">
+      <a href="#ghostty">Ghostty</a>
+      <a href="#zsh">Zsh</a>
+      <a href="#git">Git</a>
+      <a href="#tmux">tmux</a>
+      <a href="#vim">Vim</a>
+      <a href="#starship">Starship</a>
+      <a href="#settings">設定</a>
+    </nav>
     <div id="empty" class="empty">一致する項目がありません。検索語を短くしてみてください。</div>
 
     <section id="ghostty" data-search-section>
@@ -366,8 +634,17 @@
           <dl class="rows">
             <div class="row"><dt>Font</dt><dd><code>HackGen Console NF / 12pt</code></dd></div>
             <div class="row"><dt>Background</dt><dd><code>#0b0b0b / 85%</code> 透過</dd></div>
-            <div class="row"><dt>Titlebar</dt><dd><code>transparent</code>、ウィンドウボタンとproxy iconは非表示</dd></div>
+            <div class="row" data-default="buttons / proxy visible" data-current="buttons / proxy hidden"><dt>Titlebar</dt><dd><code>transparent</code>、ウィンドウボタンとproxy iconは非表示</dd></div>
             <div class="row"><dt>Option key</dt><dd>OptionをAlt / Metaとして送信</dd></div>
+            <div class="row"><dt>Cursor</dt><dd><code>block</code>、点滅なし</dd></div>
+            <div class="row"><dt>Selection</dt><dd><code>#4fa7c2</code> 背景 / <code>#17130f</code> 文字</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Alerts</h3>
+          <dl class="rows">
+            <div class="row"><dt>BEL</dt><dd>システム音、attention、タイトル通知を有効化。枠の点滅は無効</dd></div>
+            <div class="row"><dt>OSC 9 / 777</dt><dd>デスクトップ通知を許可</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -471,7 +748,8 @@
         <article class="card" data-search-card>
           <h3>Utilities</h3>
           <dl class="rows">
-            <div class="row"><dt><code>k</code> / <code>tf</code></dt><dd><code>kubectl</code> / <code>terraform</code></dd></div>
+            <div class="row"><dt><code>k</code></dt><dd><code>kubectl</code></dd></div>
+            <div class="row"><dt><code>km</code></dt><dd>Kubernetes監視セッションを開始 / 再接続</dd></div>
             <div class="row"><dt><code>reload-zsh</code></dt><dd>Zsh設定を再読み込み</dd></div>
             <div class="row"><dt><code>path-list</code></dt><dd>PATHを1行ずつ表示</dd></div>
             <div class="row"><dt><code>which-all cmd</code></dt><dd>コマンドの解決候補をすべて表示</dd></div>
@@ -491,6 +769,60 @@
             <span class="pill">ビープ無効</span>
             <span class="pill">Emacsキーマップ</span>
           </div>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Environment &amp; history</h3>
+          <dl class="rows">
+            <div class="row"><dt>Locale</dt><dd><code>LANG=ja_JP.UTF-8</code></dd></div>
+            <div class="row"><dt>Editor</dt><dd><code>EDITOR=vim</code> / <code>VISUAL=vim</code></dd></div>
+            <div class="row"><dt>Pager</dt><dd><code>PAGER=less</code></dd></div>
+            <div class="row"><dt>History size</dt><dd><code>HISTSIZE=100000</code> / <code>SAVEHIST=100000</code>、<code>~/.zsh_history</code>へ保存</dd></div>
+            <div class="row"><dt>PATH priority</dt><dd><code>~/.local/bin</code> → <code>~/bin</code> → Homebrew → system。重複は除外</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Completion &amp; plugins</h3>
+          <dl class="rows">
+            <div class="row"><dt>compinit</dt><dd><code>.zcompdump</code>を24時間キャッシュ</dd></div>
+            <div class="row"><dt>Matching</dt><dd>大文字・小文字を区別せず、説明付きメニューから選択</dd></div>
+            <div class="row"><dt>autosuggestions</dt><dd>履歴ベースの入力候補</dd></div>
+            <div class="row"><dt>syntax highlighting</dt><dd>入力中のコマンドを色分け</dd></div>
+            <div class="row"><dt>zsh-completions</dt><dd>追加の補完定義を利用</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Command overrides</h3>
+          <dl class="rows">
+            <div class="row" data-default="grep" data-current="grep --color=auto"><dt><code>grep</code></dt><dd>一致箇所を色付き表示</dd></div>
+            <div class="row" data-default="mkdir" data-current="mkdir -p"><dt><code>mkdir</code></dt><dd>親ディレクトリも作成し、既存でもエラーにしない</dd></div>
+            <div class="row"><dt>Window title</dt><dd>tmux外では<code>現在ディレクトリ · Gitブランチ</code>を表示</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="git" data-search-section>
+      <div class="section-head">
+        <h2>Git</h2>
+        <p class="section-note"><code>git/.gitconfig</code> のエイリアスと色設定</p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Git config aliases</h3>
+          <dl class="rows">
+            <div class="row"><dt><code>git st</code></dt><dd><code>git status -s</code></dd></div>
+            <div class="row"><dt><code>git br</code> / <code>brd</code></dt><dd>ブランチ一覧 / ブランチ削除</dd></div>
+            <div class="row"><dt><code>git co</code> / <code>cob</code></dt><dd>checkout / 新規ブランチを作ってcheckout</dd></div>
+            <div class="row"><dt><code>git graph</code></dt><dd>全ブランチを日付・作者・装飾付きグラフで表示</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Colors</h3>
+          <dl class="rows">
+            <div class="row"><dt>Branch</dt><dd>currentは黄反転、localは黄、remoteは緑</dd></div>
+            <div class="row"><dt>Diff</dt><dd>metaは黄太字、hunkは紫太字、削除は赤、追加は緑</dd></div>
+            <div class="row"><dt>Status</dt><dd>追加は黄、変更は緑、未追跡はシアン</dd></div>
+          </dl>
         </article>
       </div>
     </section>
@@ -515,12 +847,13 @@
         <article class="card" data-search-card>
           <h3>Pane operations</h3>
           <dl class="rows">
-            <div class="row"><dt><kbd>Prefix</kbd> <kbd>|</kbd></dt><dd>左右にペイン分割</dd></div>
-            <div class="row"><dt><kbd>Prefix</kbd> <kbd>-</kbd></dt><dd>上下にペイン分割</dd></div>
+            <div class="row" data-default="Prefix + %" data-current="Prefix + |"><dt><kbd>Prefix</kbd> <kbd>|</kbd></dt><dd>左右にペイン分割</dd></div>
+            <div class="row" data-default="Prefix + &quot;" data-current="Prefix + -"><dt><kbd>Prefix</kbd> <kbd>-</kbd></dt><dd>上下にペイン分割</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Z</kbd></dt><dd>現在のペインをズーム / 元に戻す</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>[</kbd></dt><dd>copy modeへ入る</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>S</kbd></dt><dd>複数ペインへの同時入力を切り替え</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>X</kbd></dt><dd>現在のペインを終了</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>R</kbd></dt><dd>終了済みペインを最後のコマンドで復活</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Ctrl</kbd> <kbd>X</kbd></dt><dd>現在のウィンドウを終了</dd></div>
           </dl>
         </article>
@@ -542,11 +875,54 @@
           </dl>
         </article>
         <article class="card" data-search-card>
+          <h3>Behavior overrides</h3>
+          <dl class="rows">
+            <div class="row" data-default="mouse off" data-current="mouse on"><dt>Mouse</dt><dd>クリック、選択、ホイール操作を有効化</dd></div>
+            <div class="row" data-default="window 0 / pane 0" data-current="window 1 / pane 1"><dt>Index</dt><dd>ウィンドウとペイン番号を1から開始</dd></div>
+            <div class="row" data-default="2,000 lines" data-current="50,000 lines"><dt>History</dt><dd>ペインのスクロールバックを拡張</dd></div>
+            <div class="row" data-default="15 sec" data-current="1 sec"><dt>Status refresh</dt><dd>日時とステータスを毎秒更新</dd></div>
+            <div class="row" data-default="escape-time 500ms" data-current="escape-time 10ms"><dt>Escape delay</dt><dd>Vimなどのモード切り替え遅延を短縮</dd></div>
+            <div class="row" data-default="renumber off" data-current="renumber on"><dt>Window numbers</dt><dd>終了後のウィンドウ番号を自動で詰める</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Status &amp; appearance</h3>
+          <dl class="rows">
+            <div class="row"><dt>Pane title</dt><dd>上端にタイトルを常時表示し、active paneを明るく表示</dd></div>
+            <div class="row"><dt>Border</dt><dd>太線。active <code>#5a5a5a</code> / inactive <code>#333333</code></dd></div>
+            <div class="row"><dt>Status left</dt><dd>セッション名</dd></div>
+            <div class="row"><dt>Status right</dt><dd>Kubernetesアラートと現在日時</dd></div>
+            <div class="row"><dt>Window tabs</dt><dd>active・inactive・alertの3状態で色分け</dd></div>
+            <div class="row"><dt>Terminal title</dt><dd><code>session · index:name · directory</code></dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Clipboard portability</h3>
+          <dl class="rows">
+            <div class="row"><dt>macOS</dt><dd><code>pbcopy</code></dd></div>
+            <div class="row"><dt>Wayland</dt><dd><code>wl-copy</code></dd></div>
+            <div class="row"><dt>X11</dt><dd><code>xclip -selection clipboard</code></dd></div>
+            <div class="row"><dt>Windows</dt><dd><code>clip.exe</code></dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
           <h3>Monitor scripts</h3>
           <dl class="rows">
-            <div class="row"><dt><code>tmp/scripts/k8s-monitor</code></dt><dd>Kubernetes監視セッションを開始 / 再接続</dd></div>
-            <div class="row"><dt><code>tmp/scripts/k8s-monitor --kill</code></dt><dd>監視セッションを終了</dd></div>
-            <div class="row"><dt>Windows</dt><dd><code>stern</code> / <code>watch_pod</code> / <code>free</code></dd></div>
+            <div class="row"><dt><code>km</code></dt><dd>Kubernetes監視セッションを開始 / 再接続</dd></div>
+            <div class="row"><dt><code>scripts/k8s-monitor/k8s-monitor.sh --kill</code></dt><dd>監視セッションを終了</dd></div>
+            <div class="row"><dt><code>scripts/k8s-monitor/k8s-monitor.sh --restart</code></dt><dd>全ウィンドウを再構築</dd></div>
+            <div class="row"><dt>Windows</dt><dd><code>stern</code> / <code>watch</code> / <code>free</code></dd></div>
+          </dl>
+        </article>
+        <article class="card wide" data-search-card>
+          <h3>Kubernetes monitor environment</h3>
+          <dl class="rows">
+            <div class="row"><dt>Contexts</dt><dd><code>KKS_CONTEXT=minikube</code> / <code>SSK_CONTEXT=minikube</code></dd></div>
+            <div class="row"><dt>Namespaces</dt><dd><code>KKS_NAMESPACE=default</code> / <code>SSK_NAMESPACE=default</code></dd></div>
+            <div class="row"><dt>Watch</dt><dd><code>WATCH_INTERVAL=5</code>秒 / <code>EVENT_LINES=15</code>件</dd></div>
+            <div class="row"><dt>Alert</dt><dd><code>ALERT_COOLDOWN_SECONDS=30</code>秒 / <code>LOG_FILTER_REGEX</code></dd></div>
+            <div class="row"><dt>stern</dt><dd><code>STERN_INCLUDE_REGEX=ERROR</code>、任意のexcludeとmax-log-requestsに対応</dd></div>
+            <div class="row"><dt>Required</dt><dd><code>tmux</code> / <code>kubectl</code> / <code>stern</code> / <code>watch</code></dd></div>
           </dl>
         </article>
       </div>
@@ -610,7 +986,7 @@
           </dl>
         </article>
         <article class="card" data-search-card>
-          <h3>Editor defaults</h3>
+          <h3>Current editor behavior</h3>
           <div class="pills">
             <span class="pill">行番号</span>
             <span class="pill">カーソル行</span>
@@ -620,7 +996,51 @@
             <span class="pill">タブ幅2が基本</span>
             <span class="pill">大文字を含むとcase-sensitive検索</span>
             <span class="pill">インクリメンタル検索</span>
+            <span class="pill">検索末尾で折り返し</span>
+            <span class="pill">括弧の対応を表示</span>
+            <span class="pill">未保存バッファを保持</span>
+            <span class="pill">ファイル外1文字へ移動可能</span>
           </div>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Editor overrides</h3>
+          <dl class="rows">
+            <div class="row" data-default="Backslash" data-current="Space"><dt>Leader</dt><dd><kbd>Space</kbd>をLeaderキーとして使用</dd></div>
+            <div class="row" data-default="tabstop 8 / noexpandtab" data-current="tabstop 2 / expandtab"><dt>Indent</dt><dd>タブ幅2、入力したTabをスペースへ変換</dd></div>
+            <div class="row" data-default="off" data-current="on"><dt>Line number</dt><dd>行番号を常時表示</dd></div>
+            <div class="row" data-default="mouse disabled" data-current="mouse=a"><dt>Mouse</dt><dd>全モードでマウス操作を有効化</dd></div>
+            <div class="row" data-default="backup off / swap on" data-current="backup off / swap off"><dt>Temporary files</dt><dd>backupとswapファイルを作成しない</dd></div>
+            <div class="row" data-default="mode shown" data-current="mode hidden"><dt>Mode display</dt><dd>標準モード表示を隠し、Lightlineへ集約</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Language indentation</h3>
+          <dl class="rows">
+            <div class="row"><dt>2 spaces</dt><dd>Ruby / YAML / YML</dd></div>
+            <div class="row"><dt>4 spaces</dt><dd>C / HTML / JS / JavaScript / Zsh / Python / Scala / JSON / CSS / SCSS / Sass</dd></div>
+            <div class="row"><dt>Default</dt><dd>その他は2スペース</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Core plugins</h3>
+          <dl class="rows">
+            <div class="row"><dt>dein.vim</dt><dd>プラグイン管理。未導入時は自動clone</dd></div>
+            <div class="row"><dt>Fern</dt><dd>Git状態・Nerd Font・preview付きファイルドロワー</dd></div>
+            <div class="row"><dt>Lightline</dt><dd><code>wombat</code>配色のステータスライン</dd></div>
+            <div class="row"><dt>auto-pairs</dt><dd>括弧や引用符を自動補完</dd></div>
+            <div class="row"><dt>Despacio</dt><dd><code>Pitch</code>の黒背景カラースキーム</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Development plugins</h3>
+          <dl class="rows">
+            <div class="row"><dt>CoC</dt><dd>JSON / TypeScript / Prettier / ESLint拡張</dd></div>
+            <div class="row"><dt>fzf.vim</dt><dd>Files、Buffers、History、Tags、GFiles、Agなどを遅延読込</dd></div>
+            <div class="row"><dt>JavaScript</dt><dd>vim-js / vim-jsx-pretty</dd></div>
+            <div class="row"><dt>TypeScript</dt><dd>typescript-vim</dd></div>
+            <div class="row"><dt>Formats</dt><dd>JSON / TOML / Ansible YAML</dd></div>
+            <div class="row"><dt>Ansible</dt><dd>YAML内の空行を無視せずインデント判定</dd></div>
+          </dl>
         </article>
       </div>
     </section>
@@ -637,12 +1057,22 @@
 <span>❯</span>                                                               <span class="c-red">✘ 1</span> <span>3s</span> <span class="c-cyan">⚙ 1</span></div>
         </article>
         <article class="card" data-search-card>
+          <h3>Prompt overrides</h3>
+          <dl class="rows">
+            <div class="row" data-default="blank line on" data-current="blank line off"><dt>New line</dt><dd>プロンプト間の空行を表示しない</dd></div>
+            <div class="row" data-default="right prompt empty" data-current="status / duration / jobs"><dt>Right prompt</dt><dd>状態情報を入力行の右側へ分離</dd></div>
+            <div class="row" data-default="status disabled" data-current="status enabled"><dt>Exit status</dt><dd>失敗したコマンドの終了コードを表示</dd></div>
+            <div class="row" data-default="Kubernetes disabled" data-current="Kubernetes enabled"><dt>Kubernetes</dt><dd>contextとnamespaceを条件付き表示</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
           <h3>Git status</h3>
           <dl class="rows">
             <div class="row"><dt><code>*N</code> / <code>+N</code></dt><dd>変更済み / ステージ済み</dd></div>
-            <div class="row"><dt><code>?N</code> / <code>$N</code></dt><dd>未追跡 / stash</dd></div>
+            <div class="row"><dt><code>?N</code> / <code>≡N</code></dt><dd>未追跡 / stash</dd></div>
             <div class="row"><dt><code>⇡N</code> / <code>⇣N</code></dt><dd>remoteより先行 / 遅延</dd></div>
             <div class="row"><dt><code>~N</code> / <code>✘N</code></dt><dd>競合 / 削除</dd></div>
+            <div class="row"><dt><code>»N</code> / <code>⇕</code></dt><dd>リネーム / remoteと分岐</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -654,6 +1084,27 @@
             <div class="row"><dt><span class="c-red">⛔ production</span></dt><dd>prod / production context</dd></div>
             <div class="row"><dt><span class="c-yellow">󱃾 staging</span></dt><dd>stg / staging context</dd></div>
           </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Detection rules</h3>
+          <dl class="rows">
+            <div class="row"><dt>Directory</dt><dd>最大5階層、長いパスは<code>…/</code>、読取専用は<code>󰌾</code></dd></div>
+            <div class="row"><dt>Git branch</dt><dd>最大40文字、remote branchの常時表示は無効</dd></div>
+            <div class="row"><dt>Python</dt><dd>Python関連ファイルまたは<code>.venv</code> / <code>venv</code>で表示</dd></div>
+            <div class="row"><dt>Node.js</dt><dd><code>package.json</code>または<code>node_modules</code>で表示</dd></div>
+            <div class="row"><dt>Kubernetes</dt><dd>contextとnamespaceを表示し、prod / stg系を警告色へ変更</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Disabled modules</h3>
+          <div class="pills">
+            <span class="pill">Terraform</span>
+            <span class="pill">AWS</span>
+            <span class="pill">Package</span>
+            <span class="pill">Docker context</span>
+            <span class="pill">Google Cloud</span>
+            <span class="pill">Azure</span>
+          </div>
         </article>
       </div>
     </section>
@@ -668,6 +1119,7 @@
           <h3>Source → destination</h3>
           <dl class="rows">
             <div class="row"><dt><code>zsh/.zshrc</code></dt><dd><code>~/.zshrc</code></dd></div>
+            <div class="row"><dt><code>git/.gitconfig</code></dt><dd><code>~/.gitconfig</code></dd></div>
             <div class="row"><dt><code>ghostty/config</code></dt><dd><code>~/.config/ghostty/config</code></dd></div>
             <div class="row"><dt><code>tmux/.tmux.conf</code></dt><dd><code>~/.tmux.conf</code></dd></div>
             <div class="row"><dt><code>starship/starship.toml</code></dt><dd><code>~/.config/starship.toml</code></dd></div>
@@ -683,6 +1135,16 @@
             <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>,</kbd></dt><dd>Ghostty設定を再読み込み</dd></div>
           </dl>
         </article>
+        <article class="card wide" data-search-card>
+          <h3>Installer managed tools</h3>
+          <dl class="rows">
+            <div class="row"><dt>CLI</dt><dd><code>fzf</code> / <code>fd</code> / <code>bat</code> / <code>eza</code> / <code>ripgrep</code> / <code>jq</code> / <code>yq</code></dd></div>
+            <div class="row"><dt>Environment</dt><dd><code>direnv</code> / <code>zoxide</code> / <code>starship</code> / <code>tmux</code></dd></div>
+            <div class="row"><dt>Zsh plugins</dt><dd><code>zsh-autosuggestions</code> / <code>zsh-syntax-highlighting</code> / <code>zsh-completions</code></dd></div>
+            <div class="row"><dt>Safety</dt><dd>既存の通常ファイルは日時付きbackupへ移動。再実行可能</dd></div>
+            <div class="row"><dt>Checks</dt><dd>Zsh構文、fzfキーバインド、Starship設定、tmux設定を確認</dd></div>
+          </dl>
+        </article>
       </div>
     </section>
   </main>
@@ -690,19 +1152,127 @@
   <footer>
     <div class="shell">
       Source of truth: <code>zsh/.zshrc</code>, <code>ghostty/config</code>,
-      <code>tmux/.tmux.conf</code>, <code>starship/starship.toml</code>, <code>vim/</code>.
+      <code>git/.gitconfig</code>, <code>tmux/.tmux.conf</code>,
+      <code>starship/starship.toml</code>, <code>vim/</code>,
+      <code>scripts/k8s-monitor/</code>.
       ブラウザの印刷機能でPDF化できます。
     </div>
   </footer>
+
+  <button id="to-top" class="top-button" type="button" aria-label="ページ先頭へ">↑</button>
+  <div id="toast" class="toast" role="status">コピーしました</div>
 
   <script>
     const input = document.querySelector("#search");
     const cards = [...document.querySelectorAll("[data-search-card]")];
     const sections = [...document.querySelectorAll("[data-search-section]")];
     const empty = document.querySelector("#empty");
+    const resultCount = document.querySelector("#result-count");
+    const filterButtons = [...document.querySelectorAll(".filter-button")];
+    const diffToggle = document.querySelector("#diff-toggle");
+    const clearButton = document.querySelector("#clear");
+    const toast = document.querySelector("#toast");
+    const toTop = document.querySelector("#to-top");
+    let activeScope = loadScope();
+    let diffVisible = loadDiffVisibility();
+    let toastTimer;
+
+    function loadScope() {
+      try {
+        return localStorage.getItem("cheatsheet-scope") || "all";
+      } catch {
+        return "all";
+      }
+    }
+
+    function saveScope(scope) {
+      try {
+        localStorage.setItem("cheatsheet-scope", scope);
+      } catch {
+        // file:// でストレージが無効でも、現在の表示ではフィルターを利用できる。
+      }
+    }
+
+    function loadDiffVisibility() {
+      try {
+        return localStorage.getItem("cheatsheet-diff") !== "off";
+      } catch {
+        return true;
+      }
+    }
+
+    function saveDiffVisibility(visible) {
+      try {
+        localStorage.setItem("cheatsheet-diff", visible ? "on" : "off");
+      } catch {
+        // file:// でストレージが無効でも、現在の表示では切り替えられる。
+      }
+    }
 
     function normalize(value) {
       return value.toLocaleLowerCase("ja").normalize("NFKC");
+    }
+
+    for (const card of cards) {
+      const heading = card.querySelector("h3");
+      const isDefault = heading.textContent.trim().startsWith("Default ·");
+      card.dataset.scope = isDefault ? "default" : "custom";
+
+      if (isDefault) heading.textContent = heading.textContent.replace(/^Default ·\s*/, "");
+
+      const badge = document.createElement("span");
+      badge.className = `scope-badge ${card.dataset.scope}`;
+      badge.textContent = isDefault ? "デフォルト" : "ユーザー設定";
+      card.append(badge);
+    }
+
+    for (const row of document.querySelectorAll(".row[data-default][data-current]")) {
+      row.classList.add("has-override");
+      const diff = document.createElement("div");
+      diff.className = "setting-diff";
+
+      const label = document.createElement("span");
+      label.className = "diff-label";
+      label.textContent = "上書き";
+
+      const before = document.createElement("span");
+      before.className = "diff-value";
+      before.textContent = row.dataset.default;
+
+      const arrow = document.createElement("span");
+      arrow.className = "diff-arrow";
+      arrow.setAttribute("aria-hidden", "true");
+      arrow.textContent = "→";
+
+      const after = document.createElement("span");
+      after.className = "diff-value current";
+      after.textContent = row.dataset.current;
+
+      diff.append(label, before, arrow, after);
+      row.querySelector("dd").append(diff);
+    }
+
+    for (const card of cards) {
+      const currentOnly = card.cloneNode(true);
+      for (const diff of currentOnly.querySelectorAll(".setting-diff")) diff.remove();
+      card.dataset.currentSearch = normalize(currentOnly.textContent);
+    }
+
+    function setScope(scope) {
+      activeScope = ["all", "custom", "default"].includes(scope) ? scope : "all";
+      saveScope(activeScope);
+      for (const button of filterButtons) {
+        button.setAttribute("aria-pressed", String(button.dataset.scope === activeScope));
+      }
+      filterCards();
+    }
+
+    function setDiffVisibility(visible) {
+      diffVisible = visible;
+      document.body.classList.toggle("diff-off", !diffVisible);
+      diffToggle.setAttribute("aria-pressed", String(diffVisible));
+      diffToggle.textContent = diffVisible ? "Diff ON" : "Diff OFF";
+      saveDiffVisibility(diffVisible);
     }
 
     function filterCards() {
@@ -710,8 +1280,9 @@
       let visibleCards = 0;
 
       for (const card of cards) {
-        const text = normalize(card.textContent);
-        const visible = terms.every((term) => text.includes(term));
+        const text = diffVisible ? normalize(card.textContent) : card.dataset.currentSearch;
+        const scopeMatches = activeScope === "all" || card.dataset.scope === activeScope;
+        const visible = scopeMatches && terms.every((term) => text.includes(term));
         card.classList.toggle("is-hidden", !visible);
         if (visible) visibleCards += 1;
       }
@@ -723,20 +1294,94 @@
       }
 
       empty.style.display = visibleCards === 0 ? "block" : "none";
+      resultCount.textContent = `${visibleCards} / ${cards.length} カードを表示`;
     }
 
     input.addEventListener("input", filterCards);
+    for (const button of filterButtons) {
+      button.addEventListener("click", () => setScope(button.dataset.scope));
+    }
+    diffToggle.addEventListener("click", () => setDiffVisibility(!diffVisible));
+    clearButton.addEventListener("click", () => {
+      input.value = "";
+      setScope("all");
+      setDiffVisibility(true);
+      input.focus();
+    });
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1300);
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const helper = document.createElement("textarea");
+      helper.value = text;
+      helper.style.position = "fixed";
+      helper.style.opacity = "0";
+      document.body.append(helper);
+      helper.select();
+      const copied = document.execCommand("copy");
+      helper.remove();
+      if (!copied) throw new Error("copy failed");
+    }
+
+    for (const code of document.querySelectorAll(".row code")) {
+      code.dataset.copy = "";
+      code.title = "クリックしてコピー";
+      code.addEventListener("click", async () => {
+        try {
+          await copyText(code.textContent.trim());
+          showToast(`「${code.textContent.trim()}」をコピーしました`);
+        } catch {
+          showToast("コピーできませんでした");
+        }
+      });
+    }
+
+    for (const prompt of document.querySelectorAll(".prompt")) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy-button";
+      button.textContent = "コピー";
+      button.addEventListener("click", async () => {
+        try {
+          await copyText(prompt.textContent.trim());
+          showToast("表示例をコピーしました");
+        } catch {
+          showToast("コピーできませんでした");
+        }
+      });
+      prompt.before(button);
+    }
+
+    window.addEventListener("scroll", () => {
+      toTop.classList.toggle("show", window.scrollY > 700);
+    }, { passive: true });
+    toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
     window.addEventListener("keydown", (event) => {
-      if (event.key === "/" && document.activeElement !== input) {
+      const isTyping = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
+      if (event.key === "/" && !isTyping) {
         event.preventDefault();
         input.focus();
       }
-      if (event.key === "Escape" && document.activeElement === input) {
+      if (event.key === "Escape") {
         input.value = "";
         input.blur();
         filterCards();
       }
     });
+
+    setDiffVisibility(diffVisible);
+    setScope(activeScope);
   </script>
 </body>
 </html>

@@ -13,6 +13,13 @@ WATCH_INTERVAL="${WATCH_INTERVAL:-5}"
 EVENT_LINES="${EVENT_LINES:-15}"
 ALERT_COOLDOWN_SECONDS="${ALERT_COOLDOWN_SECONDS:-30}"
 
+STERN_MAX_LOG_REQUESTS="${STERN_MAX_LOG_REQUESTS:-}"
+# sternのexclude（正規表現）
+STERN_EXCLUDE_REGEX="${STERN_EXCLUDE_REGEX:-""}"
+# sternのinclude / Alertの検知条件 （正規表現）
+STERN_INCLUDE_REGEX="${STERN_INCLUDE_REGEX:-(?i)(error|exception|panic)}"
+LOG_FILTER_REGEX="${LOG_FILTER_REGEX:-${STERN_INCLUDE_REGEX}}"
+
 SCRIPT_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
 
 # ==============================================================================
@@ -94,7 +101,7 @@ cmd_pod_watch() {
   local namespace="$2"
 
   printf \
-    '%sexec watch --interval %q --no-title --exec kubectl --context %q get pods --namespace %q --output=wide' \
+    '%sexec watch --interval %q --no-title --exec kubectl --context %q get pods --namespace %q' \
     "$(ctrl_c_disable_prefix)" \
     "$WATCH_INTERVAL" \
     "$context" \
@@ -153,6 +160,31 @@ cmd_free_shell() {
 # ==============================================================================
 # stern_*: stern 実行中の監視・通知処理
 # ==============================================================================
+
+# 環境変数から stern の追加引数を組み立てる。
+stern_build_args() {
+  local -a args
+
+  args=(
+    --context "$1"
+    --namespace "$2"
+    --since 2m
+    --tail 5
+    --include "$STERN_INCLUDE_REGEX"
+    --color always
+    --diff-container
+  )
+
+  if [[ -n "$STERN_EXCLUDE_REGEX" ]]; then
+    args+=(--exclude "$STERN_EXCLUDE_REGEX")
+  fi
+
+  if [[ -n "$STERN_MAX_LOG_REQUESTS" ]]; then
+    args+=(--max-log-requests "$STERN_MAX_LOG_REQUESTS")
+  fi
+
+  printf '%s\0' "${args[@]}"
+}
 
 # stern が ERROR 系ログを検知したことを tmux option に一時的に保存する。
 stern_show_alert_status() {
@@ -214,7 +246,7 @@ stern_process_lines() {
   while IFS= read -r line; do
     printf '%s\n' "$line"
 
-    printf '%s\n' "$line" | grep -Eiq 'error|exception|panic' || continue
+    printf '%s\n' "$line" | grep -Eiq "$LOG_FILTER_REGEX" || continue
 
     now="$(date +%s)"
     (( now - last_alert_at < ALERT_COOLDOWN_SECONDS )) && continue
@@ -231,19 +263,16 @@ stern_run() {
   local system_name="$1"
   local context="$2"
   local namespace="$3"
+  local -a stern_args
 
   ctrl_c_restore_on_exit
   ctrl_c_disable_current_shell
   clear
 
+  mapfile -d '' -t stern_args < <(stern_build_args "$context" "$namespace")
+
   stern \
-    --context "$context" \
-    --namespace "$namespace" \
-    --since 2m \
-    --tail 5 \
-    --include '(?i)(error|exception|panic)' \
-    --color always \
-    --diff-container \
+    "${stern_args[@]}" \
     . 2>&1 | stern_process_lines "$system_name" "$context" "$namespace"
 }
 

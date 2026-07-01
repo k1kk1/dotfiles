@@ -318,6 +318,10 @@ Session · Window · Directory
 |WATCH_INTERVAL|watch更新間隔|5|
 |EVENT_LINES|表示するEvent数|15|
 |ALERT_COOLDOWN_SECONDS|通知抑止時間|30|
+|STERN_MAX_LOG_REQUESTS|stern の `--max-log-requests`|未指定|
+|STERN_EXCLUDE_REGEX|stern の `--exclude` 正規表現|空|
+|STERN_INCLUDE_REGEX|stern の `--include` 正規表現|`(?i)(error|exception|panic)`|
+|LOG_FILTER_REGEX|通知判定用の正規表現|`STERN_INCLUDE_REGEX` と同じ|
 
 ---
 

@@ -60,6 +60,7 @@ _plugin_install() {
 _plugin_install "zsh-users/zsh-autosuggestions"
 _plugin_install "zsh-users/zsh-syntax-highlighting"
 _plugin_install "zsh-users/zsh-completions"
+_plugin_install "wbingli/zsh-claudecode-completion"
 
 # ------------------------------------------------------------------------------
 # 3. シンボリックリンク

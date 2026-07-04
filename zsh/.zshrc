@@ -136,6 +136,11 @@ if [[ -d "$ZSH_PLUGIN_DIR/zsh-completions/src" ]]; then
   fpath=("$ZSH_PLUGIN_DIR/zsh-completions/src" $fpath)
 fi
 
+# Claude Code の補完関数を compinit より前に fpath へ追加する
+if [[ -d "$ZSH_PLUGIN_DIR/zsh-claudecode-completion" ]]; then
+  fpath=("$ZSH_PLUGIN_DIR/zsh-claudecode-completion" $fpath)
+fi
+
 # ==============================================================================
 # Completion
 # ==============================================================================
@@ -143,9 +148,12 @@ fi
 autoload -Uz compinit
 
 zcompdump="${ZDOTDIR:-$HOME}/.zcompdump"
+claude_completion="$ZSH_PLUGIN_DIR/zsh-claudecode-completion/_claude"
 
-# .zcompdump が無い、または古いときは通常 compinit、それ以外は -C で高速起動
-if [[ ! -f "$zcompdump" || -n "$zcompdump"(#qN.mh+24) ]]; then
+# .zcompdump が無い、古い、または補完定義が更新されたときは再生成する
+if [[ ! -f "$zcompdump" ||
+      -n "$zcompdump"(#qN.mh+24) ||
+      ( -f "$claude_completion" && "$claude_completion" -nt "$zcompdump" ) ]]; then
   compinit
 else
   compinit -C

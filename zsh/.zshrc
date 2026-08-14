@@ -61,6 +61,12 @@ path=(
   "/usr/sbin"
   "/sbin"
 
+  # additional
+  "/opt/homebrew/opt/openjdk@17/bin"
+  "/Users/kikki/.antigravity-ide/antigravity-ide/bin"
+  "$N_PREFIX/bin"
+  "/Users/kikki/.n/bin"
+  
   $path
 )
 
@@ -227,6 +233,9 @@ alias gpl='git pull --ff-only'
 alias k='kubectl'
 alias km="bash ~/src/dotfiles/scripts/k8s-monitor/k8s-monitor.sh"
 
+# Agent
+alias au='/Users/kikki/src/agent-usage/agent-status-pane.sh'
+
 # ==============================================================================
 # Functions
 # ==============================================================================
@@ -302,3 +311,9 @@ add-zsh-hook precmd _update_window_title
 export STARSHIP_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
 
 eval "$(starship init zsh)"
+
+
+# ==============================================================================
+# Node.js
+# ==============================================================================
+export N_PREFIX=$HOME/.n

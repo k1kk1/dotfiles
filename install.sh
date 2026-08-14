@@ -32,7 +32,7 @@ _brew_install() {
   fi
 }
 
-for pkg in fzf fd bat eza ripgrep jq yq direnv zoxide starship tmux; do
+for pkg in fzf fd bat eza ripgrep jq yq direnv zoxide starship tmux herdr lazygit; do
   _brew_install "$pkg"
 done
 
@@ -93,6 +93,7 @@ _symlink "$DOTFILES_DIR/zsh/.zshrc"          "$HOME/.zshrc"
 _symlink "$DOTFILES_DIR/git/.gitconfig"      "$HOME/.gitconfig"
 _symlink "$DOTFILES_DIR/starship/starship.toml" "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
 _symlink "$DOTFILES_DIR/ghostty/config"      "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
+_symlink "$DOTFILES_DIR/herdr/config.toml"     "${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml"
 _symlink "$DOTFILES_DIR/tmux/.tmux.conf"     "$HOME/.tmux.conf"
 _symlink "$DOTFILES_DIR/vim"                 "$HOME/.vim"
 _symlink "$DOTFILES_DIR/vim"                 "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
@@ -133,6 +134,13 @@ if tmux -f "$DOTFILES_DIR/tmux/.tmux.conf" -L dotfiles-config-check start-server
   _ok ".tmux.conf 構文エラーなし、mouse on"
 else
   _fail ".tmux.conf の読み込みに失敗しました"
+fi
+
+# Herdr config
+if HERDR_CONFIG_PATH="$DOTFILES_DIR/herdr/config.toml" herdr config check &>/dev/null; then
+  _ok "Herdr config 構文エラーなし"
+else
+  _fail "Herdr config の読み込みに失敗しました"
 fi
 
 print -P "\n%F{002}セットアップ完了。%f 新しいターミナルを開くか、以下を実行してください:"

@@ -570,7 +570,7 @@
     <p class="eyebrow">Personal environment reference</p>
     <h1>Dotfiles<br>Cheat Sheet</h1>
     <p class="lead">
-      Ghostty、Zsh、Git、tmux、Vim / Neovim、Starship、Kubernetes監視の現在の設定を、
+      Ghostty、Herdr、Zsh、Git、tmux、Vim / Neovim、Starship、Kubernetes監視の現在の設定を、
       「思い出すまでが一番長い」順にまとめた早見表。
     </p>
   </header>
@@ -606,6 +606,7 @@
     </div>
     <nav class="section-nav" aria-label="セクション">
       <a href="#ghostty">Ghostty</a>
+      <a href="#herdr">Herdr</a>
       <a href="#zsh">Zsh</a>
       <a href="#git">Git</a>
       <a href="#tmux">tmux</a>
@@ -680,6 +681,72 @@
             <div class="row"><dt><kbd>⌘</kbd> <kbd>F</kbd></dt><dd>ターミナル内検索を開始</dd></div>
             <div class="row"><dt><kbd>⌘</kbd> <kbd>G</kbd></dt><dd>次の検索結果。Shift付きで前へ</dd></div>
             <div class="row"><dt><kbd>⌘</kbd> <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>前 / 次のプロンプトへジャンプ</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="herdr" data-search-section>
+      <div class="section-head">
+        <h2>Herdr</h2>
+        <p class="section-note"><kbd>Prefix</kbd> は <kbd>Ctrl</kbd> <kbd>B</kbd></p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Jump &amp; navigation</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>1…9</kbd></dt><dd>Tab 1〜9へ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>1…9</kbd></dt><dd>Workspace 1〜9へ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>1…9</kbd></dt><dd>Agent一覧の1〜9へ直接移動</dd></div>
+            <div class="row" data-default="unset" data-current="Prefix + `"><dt><kbd>Prefix</kbd> <kbd>`</kbd></dt><dd>WorkspaceやTabをまたいで直前のPaneへ戻る</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>O</kbd></dt><dd>通知を出したAgentへ移動</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Pane &amp; tab</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>C</kbd></dt><dd>新しいTabを作成</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>V</kbd> / <kbd>-</kbd></dt><dd>Paneを右 / 下へ分割</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></dt><dd>左 / 下 / 上 / 右のPaneへ移動</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>P</kbd></dt><dd>Paneの表示名を変更。Agent一覧の3行目に表示</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>E</kbd></dt><dd>現在のPaneのscrollbackを<code>$EDITOR</code>で開く</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Z</kbd></dt><dd>現在のPaneをズーム / 元に戻す</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>X</kbd></dt><dd>現在のPaneを閉じる</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Popup tools</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>G</kbd></dt><dd><code>lazygit</code>を90% × 90%のPopupで開く</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>T</kbd></dt><dd>一時ターミナルを80% × 80%のPopupで開く</dd></div>
+            <div class="row"><dt>Close popup</dt><dd><code>q</code>や<code>exit</code>で閉じ、元のPaneへ戻る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Agent dashboard</h3>
+          <dl class="rows">
+            <div class="row" data-default="spaces" data-current="priority"><dt>Sort</dt><dd><code>blocked / done / working / idle</code>など対応優先度に近い順でAgentを表示</dd></div>
+            <div class="row" data-default="workspace + tab / agent" data-current="agent + state / title / pane + tab"><dt>Agent rows</dt><dd>Agent種別と状態、作業タイトル、Pane表示名とTabを3行で表示</dd></div>
+            <div class="row" data-default="off" data-current="on"><dt>Pane labels</dt><dd>Pane境界に<code>codex</code> / <code>claude</code>などのAgent名を表示</dd></div>
+            <div class="row" data-default="26" data-current="30"><dt>Sidebar width</dt><dd>Sidebarの基準幅を30列に拡張</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Notifications &amp; session</h3>
+          <dl class="rows">
+            <div class="row" data-default="off / 1 sec" data-current="terminal / 2 sec"><dt>Toast</dt><dd>2秒継続した完了・入力待ちをGhostty経由で通知</dd></div>
+            <div class="row" data-default="sound on" data-current="sound off"><dt>Sound</dt><dd>Agent状態変更の通知音は無効</dd></div>
+            <div class="row"><dt>Restore</dt><dd>サーバー再起動後に対応Agentの会話セッションを再開</dd></div>
+            <div class="row"><dt>Worktrees</dt><dd><code>~/.herdr/worktrees</code>以下へ作成</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Terminal &amp; Japanese IME</h3>
+          <dl class="rows">
+            <div class="row"><dt>Shell</dt><dd>macOSでlogin shellを使い、新しいPane / Tabは元のcwdを引き継ぐ</dd></div>
+            <div class="row" data-default="off" data-current="Claude / Codex only"><dt>CJK cursor</dt><dd>Claude / Codex TUIで日本語IME候補ウィンドウの位置を追従</dd></div>
+            <div class="row"><dt>ASCII switching</dt><dd>Google日本語入力を考慮し、Prefix中の英数自動切替は無効</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>R</kbd></dt><dd>Herdr設定をリロード</dd></div>
           </dl>
         </article>
       </div>
@@ -1121,6 +1188,7 @@
             <div class="row"><dt><code>zsh/.zshrc</code></dt><dd><code>~/.zshrc</code></dd></div>
             <div class="row"><dt><code>git/.gitconfig</code></dt><dd><code>~/.gitconfig</code></dd></div>
             <div class="row"><dt><code>ghostty/config</code></dt><dd><code>~/.config/ghostty/config</code></dd></div>
+            <div class="row"><dt><code>herdr/config.toml</code></dt><dd><code>~/.config/herdr/config.toml</code></dd></div>
             <div class="row"><dt><code>tmux/.tmux.conf</code></dt><dd><code>~/.tmux.conf</code></dd></div>
             <div class="row"><dt><code>starship/starship.toml</code></dt><dd><code>~/.config/starship.toml</code></dd></div>
             <div class="row"><dt><code>vim/</code></dt><dd><code>~/.vim</code> / <code>~/.config/nvim</code></dd></div>
@@ -1132,6 +1200,7 @@
             <div class="row"><dt><code>zsh install.sh</code></dt><dd>依存導入とシンボリックリンクをまとめて設定</dd></div>
             <div class="row"><dt><code>source ~/.zshrc</code></dt><dd>Zsh / Starshipを再読み込み</dd></div>
             <div class="row"><dt><code>tmux source-file ~/.tmux.conf</code></dt><dd>tmux設定を再読み込み</dd></div>
+            <div class="row"><dt><code>herdr server reload-config</code></dt><dd>Herdr設定を再読み込み</dd></div>
             <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>,</kbd></dt><dd>Ghostty設定を再読み込み</dd></div>
           </dl>
         </article>
@@ -1139,10 +1208,10 @@
           <h3>Installer managed tools</h3>
           <dl class="rows">
             <div class="row"><dt>CLI</dt><dd><code>fzf</code> / <code>fd</code> / <code>bat</code> / <code>eza</code> / <code>ripgrep</code> / <code>jq</code> / <code>yq</code></dd></div>
-            <div class="row"><dt>Environment</dt><dd><code>direnv</code> / <code>zoxide</code> / <code>starship</code> / <code>tmux</code></dd></div>
+            <div class="row"><dt>Environment</dt><dd><code>direnv</code> / <code>zoxide</code> / <code>starship</code> / <code>tmux</code> / <code>herdr</code> / <code>lazygit</code></dd></div>
             <div class="row"><dt>Zsh plugins</dt><dd><code>zsh-autosuggestions</code> / <code>zsh-syntax-highlighting</code> / <code>zsh-completions</code></dd></div>
             <div class="row"><dt>Safety</dt><dd>既存の通常ファイルは日時付きbackupへ移動。再実行可能</dd></div>
-            <div class="row"><dt>Checks</dt><dd>Zsh構文、fzfキーバインド、Starship設定、tmux設定を確認</dd></div>
+            <div class="row"><dt>Checks</dt><dd>Zsh構文、fzfキーバインド、Starship設定、tmux設定、Herdr設定を確認</dd></div>
           </dl>
         </article>
       </div>
@@ -1151,7 +1220,7 @@
 
   <footer>
     <div class="shell">
-      Source of truth: <code>zsh/.zshrc</code>, <code>ghostty/config</code>,
+      Source of truth: <code>zsh/.zshrc</code>, <code>ghostty/config</code>, <code>herdr/config.toml</code>,
       <code>git/.gitconfig</code>, <code>tmux/.tmux.conf</code>,
       <code>starship/starship.toml</code>, <code>vim/</code>,
       <code>scripts/k8s-monitor/</code>.

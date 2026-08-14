@@ -14,6 +14,8 @@ dotfiles/
 ├── vim/                Vim / Neovim 設定 -> ~/.vim, ~/.config/nvim
 ├── ghostty/
 │   └── config          ターミナル設定 -> ~/.config/ghostty/config
+├── herdr/
+│   └── config.toml     Herdr設定 -> ~/.config/herdr/config.toml
 ├── tmux/
 │   └── .tmux.conf      tmux設定 -> ~/.tmux.conf
 └── docs/
@@ -35,8 +37,32 @@ install.sh は以下を自動実行する。何度実行しても安全（冪等
 
 1. Homebrew ツールのインストール（未インストールのみ）
 2. Zsh プラグインの clone（未 clone のみ）
-3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.tmux.conf`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
-4. 構文チェックと fzf 動作確認
+3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.config/herdr/config.toml`, `~/.tmux.conf`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
+4. Zsh、tmux、Herdrの設定と fzf の動作確認
+
+---
+
+## Herdr
+
+Agentは対応優先度順に並び、外側のターミナル経由で完了・入力待ちを通知する。
+
+| キー | 動作 |
+| --- |---|
+| `Ctrl-b 1..9` | Tab 1〜9へ移動 |
+| `Ctrl-b Shift-1..9` | Workspace 1〜9へ移動 |
+| `Ctrl-b Alt-1..9` | Agent一覧の1〜9へ移動 |
+| `` Ctrl-b ` `` | 直前のPaneへ戻る |
+| `Ctrl-b Shift-p` | Paneの表示名を変更 |
+| `Ctrl-b Alt-g` | lazygitをPopupで開く |
+| `Ctrl-b t` | 一時ターミナルをPopupで開く |
+| `Ctrl-b o` | 通知したAgentへ移動 |
+| `Ctrl-b Shift-r` | 設定をリロード |
+
+コマンドからリロードする場合:
+
+```zsh
+herdr server reload-config
+```
 
 ---
 
@@ -203,6 +229,8 @@ zsh-plugins-update
 | `direnv` | ディレクトリごとの環境変数管理 |
 | `zoxide` | 履歴ベースの高速ディレクトリ移動（`z`） |
 | `starship` | プロンプト |
+| `herdr` | AI coding agent向けターミナルWorkspace管理 |
+| `lazygit` | HerdrのPopupから開くGit TUI |
 
 ---
 

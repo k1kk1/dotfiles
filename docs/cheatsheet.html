@@ -130,6 +130,116 @@
       justify-content: flex-end;
     }
 
+    .shortcut-filter {
+      display: flex;
+      grid-column: 1 / -1;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+      padding-top: 10px;
+      border-top: 1px solid rgb(53 53 80 / 58%);
+    }
+
+    .shortcut-filter-label {
+      flex: 0 0 auto;
+      margin-right: 2px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .modifier-filter {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 5px;
+    }
+
+    .modifier-button {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      min-height: 34px;
+      padding: 0;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      cursor: pointer;
+      font-family: "SF Pro", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .modifier-button:hover {
+      color: var(--text);
+      border-color: var(--cyan);
+    }
+
+    .modifier-button[aria-pressed="true"] {
+      color: #11111b;
+      background: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .key-filter {
+      display: flex;
+      flex: 1 1 220px;
+      align-items: center;
+      min-width: 150px;
+      min-height: 34px;
+      padding: 0 10px;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      font-size: .74rem;
+      font-weight: 800;
+    }
+
+    .key-filter:focus-within {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgb(99 216 239 / 10%);
+    }
+
+    .key-input {
+      width: 100%;
+      min-width: 70px;
+      padding: 0;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      outline: none;
+      font: inherit;
+      font-weight: 650;
+    }
+
+    .key-input::placeholder { color: #77778f; }
+
+    .shortcut-clear {
+      min-height: 34px;
+      padding: 0 10px;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: .76rem;
+      white-space: nowrap;
+    }
+
+    .shortcut-clear:hover:not(:disabled) {
+      color: var(--text);
+      background: var(--panel);
+    }
+
+    .shortcut-clear:disabled {
+      opacity: .38;
+      cursor: default;
+    }
+
     .scope-filter {
       display: flex;
       gap: 4px;
@@ -538,6 +648,11 @@
       .scope-filter { flex: 1 0 100%; }
       .scope-filter .filter-button { flex: 1; }
       .diff-toggle, .clear-button { flex: 1; }
+      .shortcut-filter { flex-wrap: wrap; }
+      .shortcut-filter-label { flex-basis: 100%; }
+      .modifier-filter { flex: 1 1 auto; }
+      .modifier-button { flex: 1; }
+      .key-filter { flex-basis: calc(100% - 58px); }
       .result-bar { align-items: start; flex-direction: column; gap: 4px; }
       .grid { grid-template-columns: 1fr; }
       .card.wide { grid-column: auto; }
@@ -592,6 +707,24 @@
         <button id="diff-toggle" class="diff-toggle" type="button" aria-pressed="true">Diff ON</button>
         <button id="clear" class="clear-button" type="button">リセット</button>
       </div>
+      <div id="shortcut-filter" class="shortcut-filter">
+        <span class="shortcut-filter-label">Shortcut</span>
+        <div class="modifier-filter" role="group" aria-label="修飾キー（複数選択可）">
+          <button class="modifier-button" type="button" data-modifier="ctrl"
+            aria-label="Control" aria-pressed="false" title="Control">⌃</button>
+          <button class="modifier-button" type="button" data-modifier="cmd"
+            aria-label="Command" aria-pressed="false" title="Command">⌘</button>
+          <button class="modifier-button" type="button" data-modifier="option"
+            aria-label="Option / Alt" aria-pressed="false" title="Option / Alt">⌥</button>
+          <button class="modifier-button" type="button" data-modifier="shift"
+            aria-label="Shift" aria-pressed="false" title="Shift">⇧</button>
+        </div>
+        <label class="key-filter" for="shortcut-key">
+          <input id="shortcut-key" class="key-input" type="text" aria-label="キー"
+            placeholder="キーを入力: A、Enter、Space…" autocomplete="off" spellcheck="false">
+        </label>
+        <button id="shortcut-clear" class="shortcut-clear" type="button" disabled>解除</button>
+      </div>
     </div>
   </div>
 
@@ -607,6 +740,7 @@
     <nav class="section-nav" aria-label="セクション">
       <a href="#ghostty">Ghostty</a>
       <a href="#herdr">Herdr</a>
+      <a href="#plugins">Plugins</a>
       <a href="#zsh">Zsh</a>
       <a href="#git">Git</a>
       <a href="#tmux">tmux</a>
@@ -720,6 +854,7 @@
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>G</kbd></dt><dd><code>lazygit</code>を90% × 90%のPopupで開く</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>T</kbd></dt><dd>一時ターミナルを80% × 80%のPopupで開く</dd></div>
             <div class="row"><dt>Close popup</dt><dd><code>q</code>や<code>exit</code>で閉じ、元のPaneへ戻る</dd></div>
+            <div class="row"><dt>Plugins</dt><dd>Pane Manager / Layout Tools / Navigator / Command Paletteは<a href="#plugins">Plugins</a>を参照</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -747,6 +882,90 @@
             <div class="row" data-default="off" data-current="Claude / Codex only"><dt>CJK cursor</dt><dd>Claude / Codex TUIで日本語IME候補ウィンドウの位置を追従</dd></div>
             <div class="row"><dt>ASCII switching</dt><dd>Google日本語入力を考慮し、Prefix中の英数自動切替は無効</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>R</kbd></dt><dd>Herdr設定をリロード</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="plugins" data-search-section>
+      <div class="section-head">
+        <h2>Herdr Plugins</h2>
+        <p class="section-note"><code>~/src/herdr-plugins</code> · <kbd>Prefix</kbd> は <kbd>Ctrl</kbd> <kbd>B</kbd> · 動いているAgentは止まらない</p>
+      </div>
+      <div class="grid">
+        <article class="card" data-search-card>
+          <h3>Pane Manager</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + M"><dt><kbd>Prefix</kbd> <kbd>M</kbd></dt><dd>Pane Managerのオーバーレイを開く</dd></div>
+            <div class="row"><dt><kbd>1…9</kbd></dt><dd>現在PaneをTab 1〜9へ即移動。確認なし</dd></div>
+            <div class="row"><dt><kbd>M</kbd></dt><dd>移動先を絞り込んで選ぶ。方向とサイズも指定できる</dd></div>
+            <div class="row"><dt><kbd>S</kbd></dt><dd>別のPaneと入れ替える。別Tab・別Workspaceも可</dd></div>
+            <div class="row"><dt><kbd>E</kbd></dt><dd>現在Paneを新しいTabへ切り出す。即実行</dd></div>
+            <div class="row"><dt><kbd>J</kbd></dt><dd>現在Tabの全Paneを別Tabへ統合</dd></div>
+            <div class="row"><dt><kbd>Q</kbd> / <kbd>Esc</kbd></dt><dd>キャンセル</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Pane Manager · Picker</h3>
+          <dl class="rows">
+            <div class="row"><dt>文字入力</dt><dd>Workspace / Tab / Agent / cwd / タイトルを横断してfuzzy絞り込み</dd></div>
+            <div class="row"><dt><kbd>N</kbd> / <kbd>W</kbd></dt><dd>新規Tab / 新規Workspaceを作って移動。入力した文字列がそのまま名前になる</dd></div>
+            <div class="row"><dt><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Enter</kbd></dt><dd>選択と決定。マウスのクリックとホイールも使える</dd></div>
+            <div class="row"><dt>方向</dt><dd><kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd>で左 / 下 / 上 / 右。設定が<code>ask</code>のときのみ表示</dd></div>
+            <div class="row"><dt>サイズ</dt><dd><code>50:50</code> / <code>60:40</code> / <code>40:60</code>。左の数字が元からあるPaneの取り分</dd></div>
+            <div class="row"><dt>失敗時</dt><dd><kbd>R</kbd>で最新状態を取り直してやり直す</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Layout Tools</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + Alt + L"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>L</kbd></dt><dd>同一Tab内のレイアウトメニューを開く</dd></div>
+            <div class="row"><dt><kbd>E</kbd></dt><dd>Equalize。Tab内の全Paneを等しい面積にする</dd></div>
+            <div class="row"><dt><kbd>G</kbd></dt><dd>Grid。だいたい正方形になるよう格子状に並べる</dd></div>
+            <div class="row"><dt><kbd>C</kbd> / <kbd>R</kbd></dt><dd>Columns / Rows。全Paneを横一列 / 縦一列に並べる</dd></div>
+            <div class="row"><dt><kbd>H</kbd> / <kbd>L</kbd> / <kbd>K</kbd></dt><dd>Main Left / Right / Top。現在Paneを大きく、残りを反対側へ積む</dd></div>
+            <div class="row"><dt><kbd>Z</kbd></dt><dd>現在Paneのズームを切り替え</dd></div>
+            <div class="row"><dt>現在の配置</dt><dd>すでにその形になっている項目には<code>current</code>と出る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Navigator</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + F"><dt><kbd>Prefix</kbd> <kbd>F</kbd></dt><dd>Pane / Agent / Tab / Workspaceを横断検索してジャンプ</dd></div>
+            <div class="row"><dt>文字入力</dt><dd>Agent名・cwd・作業タイトル・Tab名・Workspace名にまとめてマッチ</dd></div>
+            <div class="row"><dt><kbd>Tab</kbd></dt><dd>Scope切替。Panes → Agents → Tabs → Workspaces</dd></div>
+            <div class="row"><dt><kbd>Enter</kbd></dt><dd>そこへフォーカスを移す。Paneは動かさない</dd></div>
+            <div class="row"><dt>部分列マッチ</dt><dd><code>cldmb</code>で<code>Claude · mushi-battle</code>が引ける</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Command Palette</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + Alt + P"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>P</kbd></dt><dd>全プラグインのActionを横断検索して実行</dd></div>
+            <div class="row"><dt>文字入力</dt><dd>プラグイン名とAction名の両方にマッチ。<code>pane mo</code>で<code>Pane Manager: Move to Tab...</code></dd></div>
+            <div class="row"><dt>Context</dt><dd>Palette自身ではなく、開いた時点でフォーカスしていたPaneが対象になる</dd></div>
+            <div class="row"><dt>自動追随</dt><dd>プラグインを追加すると設定なしで一覧に出る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>右クリック / CLI</h3>
+          <dl class="rows">
+            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Layout / Go to Paneが並ぶ</dd></div>
+            <div class="row"><dt>Tab右クリック</dt><dd>Merge Into / Layoutが並ぶ</dd></div>
+            <div class="row"><dt><code>herdr plugin list --json</code></dt><dd>導入済みプラグインとActionを確認</dd></div>
+            <div class="row"><dt><code>herdr plugin action invoke &lt;id&gt; --plugin &lt;plugin&gt;</code></dt><dd>Actionを直接実行</dd></div>
+            <div class="row"><dt><code>... doctor</code></dt><dd>各プラグインが見えている状態をID付きで表示</dd></div>
+          </dl>
+        </article>
+        <article class="card wide" data-search-card>
+          <h3>導入とメンテナンス</h3>
+          <dl class="rows">
+            <div class="row"><dt>Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（4つとも同様）</dd></div>
+            <div class="row"><dt>Build</dt><dd><code>cargo build --release</code>。<code>herdr plugin link</code>時にも自動で走る</dd></div>
+            <div class="row"><dt>設定</dt><dd><code>herdr plugin config-dir &lt;plugin&gt;</code>が出すディレクトリに<code>config.toml</code>を置く</dd></div>
+            <div class="row"><dt>Unlink</dt><dd><code>herdr plugin unlink pane-manager</code></dd></div>
+            <div class="row"><dt>ログ</dt><dd><code>herdr plugin log list --plugin &lt;plugin&gt;</code>でAction実行の結果を確認</dd></div>
+            <div class="row"><dt>棲み分け</dt><dd>Pane Managerは<em>どのTabに属するか</em>、Layout Toolsは<em>Tabの中のどこか</em>だけを扱う</dd></div>
           </dl>
         </article>
       </div>
@@ -1189,6 +1408,7 @@
             <div class="row"><dt><code>git/.gitconfig</code></dt><dd><code>~/.gitconfig</code></dd></div>
             <div class="row"><dt><code>ghostty/config</code></dt><dd><code>~/.config/ghostty/config</code></dd></div>
             <div class="row"><dt><code>herdr/config.toml</code></dt><dd><code>~/.config/herdr/config.toml</code></dd></div>
+            <div class="row"><dt><code>~/src/herdr-plugins/</code></dt><dd><code>herdr plugin link</code>で登録（dotfiles外の別リポジトリ）</dd></div>
             <div class="row"><dt><code>tmux/.tmux.conf</code></dt><dd><code>~/.tmux.conf</code></dd></div>
             <div class="row"><dt><code>starship/starship.toml</code></dt><dd><code>~/.config/starship.toml</code></dd></div>
             <div class="row"><dt><code>vim/</code></dt><dd><code>~/.vim</code> / <code>~/.config/nvim</code></dd></div>
@@ -1201,6 +1421,7 @@
             <div class="row"><dt><code>source ~/.zshrc</code></dt><dd>Zsh / Starshipを再読み込み</dd></div>
             <div class="row"><dt><code>tmux source-file ~/.tmux.conf</code></dt><dd>tmux設定を再読み込み</dd></div>
             <div class="row"><dt><code>herdr server reload-config</code></dt><dd>Herdr設定を再読み込み</dd></div>
+            <div class="row"><dt><code>cargo build --release</code></dt><dd>Herdrプラグインを更新後に再ビルド</dd></div>
             <div class="row"><dt><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>,</kbd></dt><dd>Ghostty設定を再読み込み</dd></div>
           </dl>
         </article>
@@ -1238,10 +1459,14 @@
     const empty = document.querySelector("#empty");
     const resultCount = document.querySelector("#result-count");
     const filterButtons = [...document.querySelectorAll(".filter-button")];
+    const modifierButtons = [...document.querySelectorAll(".modifier-button")];
+    const shortcutKeyInput = document.querySelector("#shortcut-key");
+    const shortcutClearButton = document.querySelector("#shortcut-clear");
     const diffToggle = document.querySelector("#diff-toggle");
     const clearButton = document.querySelector("#clear");
     const toast = document.querySelector("#toast");
     const toTop = document.querySelector("#to-top");
+    const activeModifiers = new Set();
     let activeScope = loadScope();
     let diffVisible = loadDiffVisibility();
     let toastTimer;
@@ -1280,6 +1505,53 @@
 
     function normalize(value) {
       return value.toLocaleLowerCase("ja").normalize("NFKC");
+    }
+
+    const modifierAliases = new Map([
+      ["ctrl", "ctrl"],
+      ["control", "ctrl"],
+      ["⌃", "ctrl"],
+      ["cmd", "cmd"],
+      ["command", "cmd"],
+      ["⌘", "cmd"],
+      ["option", "option"],
+      ["opt", "option"],
+      ["alt", "option"],
+      ["⌥", "option"],
+      ["shift", "shift"],
+      ["⇧", "shift"]
+    ]);
+
+    function normalizeShortcutToken(value) {
+      return normalize(value).replace(/\s+/g, "").trim();
+    }
+
+    function normalizeKeyQuery(value) {
+      const aliases = new Map([
+        ["return", "enter"],
+        ["escape", "esc"],
+        ["spacebar", "space"],
+        ["arrow", "矢印"],
+        ["arrows", "矢印"]
+      ]);
+      const token = normalizeShortcutToken(value);
+      return aliases.get(token) || token;
+    }
+
+    const shortcutIndex = new Map();
+    for (const row of document.querySelectorAll(".row")) {
+      if (!row.querySelector("dt kbd")) continue;
+      const tokens = [...row.querySelectorAll("kbd")]
+        .map((key) => normalizeShortcutToken(key.textContent));
+
+      const modifiers = new Set();
+      const keys = [];
+      for (const token of tokens) {
+        const modifier = modifierAliases.get(token);
+        if (modifier) modifiers.add(modifier);
+        else keys.push(token);
+      }
+      shortcutIndex.set(row, { modifiers, keys });
     }
 
     for (const card of cards) {
@@ -1344,16 +1616,70 @@
       saveDiffVisibility(diffVisible);
     }
 
+    function matchesKey(keys, query) {
+      if (!query) return true;
+
+      const alternatives = query.split(/[\s/]+/).filter(Boolean);
+      return alternatives.some((alternative) => keys.some((key) => {
+        if (/^[a-z0-9]$/.test(alternative)) {
+          if (key === alternative) return true;
+          const range = key.match(/^([a-z0-9])[.…-]([a-z0-9])$/);
+          if (!range) return false;
+          return alternative >= range[1] && alternative <= range[2];
+        }
+        return key.startsWith(alternative);
+      }));
+    }
+
+    function shortcutMatches(shortcut, keyQuery) {
+      const modifiersMatch = [...activeModifiers]
+        .every((modifier) => shortcut.modifiers.has(modifier));
+      return modifiersMatch && matchesKey(shortcut.keys, keyQuery);
+    }
+
+    function updateShortcutControls() {
+      for (const button of modifierButtons) {
+        button.setAttribute("aria-pressed", String(activeModifiers.has(button.dataset.modifier)));
+      }
+      const isActive = activeModifiers.size > 0 || normalizeKeyQuery(shortcutKeyInput.value) !== "";
+      shortcutClearButton.disabled = !isActive;
+    }
+
+    function clearShortcutFilter() {
+      activeModifiers.clear();
+      shortcutKeyInput.value = "";
+      updateShortcutControls();
+      filterCards();
+    }
+
     function filterCards() {
       const terms = normalize(input.value).trim().split(/\s+/).filter(Boolean);
+      const keyQuery = normalizeKeyQuery(shortcutKeyInput.value);
+      const shortcutFilterActive = activeModifiers.size > 0 || keyQuery !== "";
       let visibleCards = 0;
+      let visibleShortcuts = 0;
 
       for (const card of cards) {
+        const cardShortcuts = [...card.querySelectorAll(".row")]
+          .filter((row) => shortcutIndex.has(row));
+        const matchingShortcuts = cardShortcuts
+          .filter((row) => shortcutMatches(shortcutIndex.get(row), keyQuery));
+
+        for (const row of card.querySelectorAll(".row")) {
+          row.classList.toggle("is-hidden", shortcutFilterActive
+            && (!shortcutIndex.has(row) || !matchingShortcuts.includes(row)));
+        }
+
         const text = diffVisible ? normalize(card.textContent) : card.dataset.currentSearch;
         const scopeMatches = activeScope === "all" || card.dataset.scope === activeScope;
-        const visible = scopeMatches && terms.every((term) => text.includes(term));
+        const textMatches = terms.every((term) => text.includes(term));
+        const shortcutsMatch = !shortcutFilterActive || matchingShortcuts.length > 0;
+        const visible = scopeMatches && textMatches && shortcutsMatch;
         card.classList.toggle("is-hidden", !visible);
-        if (visible) visibleCards += 1;
+        if (visible) {
+          visibleCards += 1;
+          if (shortcutFilterActive) visibleShortcuts += matchingShortcuts.length;
+        }
       }
 
       for (const section of sections) {
@@ -1363,16 +1689,38 @@
       }
 
       empty.style.display = visibleCards === 0 ? "block" : "none";
-      resultCount.textContent = `${visibleCards} / ${cards.length} カードを表示`;
+      empty.textContent = shortcutFilterActive
+        ? "一致するショートカットがありません。修飾キーを減らすか、キーを変更してみてください。"
+        : "一致する項目がありません。検索語を短くしてみてください。";
+      resultCount.textContent = shortcutFilterActive
+        ? `${visibleCards} / ${cards.length} カード · ${visibleShortcuts}件のショートカット`
+        : `${visibleCards} / ${cards.length} カードを表示`;
+      updateShortcutControls();
     }
 
     input.addEventListener("input", filterCards);
     for (const button of filterButtons) {
       button.addEventListener("click", () => setScope(button.dataset.scope));
     }
+    for (const button of modifierButtons) {
+      button.addEventListener("click", () => {
+        const modifier = button.dataset.modifier;
+        if (activeModifiers.has(modifier)) activeModifiers.delete(modifier);
+        else activeModifiers.add(modifier);
+        filterCards();
+      });
+    }
+    shortcutKeyInput.addEventListener("input", filterCards);
+    shortcutClearButton.addEventListener("click", () => {
+      clearShortcutFilter();
+      shortcutKeyInput.focus();
+    });
     diffToggle.addEventListener("click", () => setDiffVisibility(!diffVisible));
     clearButton.addEventListener("click", () => {
       input.value = "";
+      activeModifiers.clear();
+      shortcutKeyInput.value = "";
+      updateShortcutControls();
       setScope("all");
       setDiffVisibility(true);
       input.focus();
@@ -1444,7 +1792,9 @@
       }
       if (event.key === "Escape") {
         input.value = "";
-        input.blur();
+        activeModifiers.clear();
+        shortcutKeyInput.value = "";
+        document.activeElement.blur();
         filterCards();
       }
     });

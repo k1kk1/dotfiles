@@ -52,6 +52,57 @@ width = "80%"
 height = "80%"
 
 # ==============================================================================
+# Plugins
+# ==============================================================================
+#
+# ~/src/herdr-plugins の4プラグイン。Herdrにはplugin actionへ直接キーを割り当てる
+# 仕組みがないため、各プラグインのバイナリをpopupで起動する。
+#
+#   herdr plugin link ~/src/herdr-plugins/herdr-pane-manager   (他3つも同様)
+#
+# 右クリックメニューとCommand Paletteからは、この設定なしでも呼び出せる。
+
+[[keys.command]]
+
+# Paneを別Tabへ移籍・交換・切り出し・統合する。プロセスは止まらない。
+key = "prefix+m"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-pane-manager/target/release/herdr-pane-manager\" ui manager"
+description = "pane manager"
+width = "60%"
+height = "70%"
+
+[[keys.command]]
+
+# 同一Tab内のレイアウト調整。Equalize / Grid / Main Left など。
+key = "prefix+alt+l"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-layout-tools/target/release/herdr-layout-tools\" ui"
+description = "layout tools"
+width = "50%"
+height = "60%"
+
+[[keys.command]]
+
+# 全WorkspaceのPane / Agent / Tabを横断検索してジャンプ。TabキーでScope切替。
+key = "prefix+f"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-navigator/target/release/herdr-navigator\" ui panes"
+description = "navigator"
+width = "70%"
+height = "70%"
+
+[[keys.command]]
+
+# 全プラグインのActionを横断検索して実行。
+key = "prefix+alt+p"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-command-palette/target/release/herdr-command-palette\" ui"
+description = "command palette"
+width = "70%"
+height = "70%"
+
+# ==============================================================================
 # Git worktree
 # ==============================================================================
 

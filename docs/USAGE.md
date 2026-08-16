@@ -38,7 +38,28 @@ install.sh は以下を自動実行する。何度実行しても安全（冪等
 1. Homebrew ツールのインストール（未インストールのみ）
 2. Zsh プラグインの clone（未 clone のみ）
 3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.config/herdr/config.toml`, `~/.tmux.conf`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
-4. Zsh、tmux、Herdrの設定と fzf の動作確認
+4. Herdr プラグインの clone・build・link（4種）
+5. Zsh、tmux、Herdrの設定と fzf の動作確認、プラグインの有効数
+
+### Herdr プラグイン
+
+`~/src/herdr-plugins` に clone し、`herdr plugin link` で登録する。
+link 時にマニフェストの `cargo build --release` が走るので、ビルドまで自動で済む。
+差分が無ければ cargo が即座に返すため、毎回実行しても待たされない。
+
+| 環境変数 | 既定 | 用途 |
+| --- | --- | --- |
+| `HERDR_PLUGINS_REPO` | `git@github.com:k1kk1/herdr-plugins.git` | clone 元 |
+| `HERDR_PLUGINS_DIR` | `~/src/herdr-plugins` | clone 先 |
+
+前提が揃わない場合は、その段だけスキップして残りは続行する。
+
+- `cargo` が無い → rustup のコマンドを表示してスキップ
+- Herdr サーバが起動していない → 起動後に再実行するよう案内してスキップ
+- clone に失敗（private リポジトリ） → `gh auth login` か SSH 鍵の確認を促す
+
+`herdr/config.toml` のキーバインドは `~/src/herdr-plugins` を前提にしているため、
+`HERDR_PLUGINS_DIR` を変えた場合は警告が出る。
 
 ---
 

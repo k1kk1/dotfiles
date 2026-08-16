@@ -901,7 +901,10 @@
             <div class="row"><dt><kbd>M</kbd></dt><dd>移動先を絞り込んで選ぶ。方向とサイズも指定できる</dd></div>
             <div class="row"><dt><kbd>S</kbd></dt><dd>別のPaneと入れ替える。別Tab・別Workspaceも可</dd></div>
             <div class="row"><dt><kbd>E</kbd></dt><dd>現在Paneを新しいTabへ切り出す。即実行</dd></div>
-            <div class="row"><dt><kbd>J</kbd></dt><dd>現在Tabの全Paneを別Tabへ統合</dd></div>
+            <div class="row"><dt><kbd>C</kbd></dt><dd>現在Tabの全Paneを別Tabへ統合（Combine）</dd></div>
+            <div class="row"><dt><kbd>U</kbd></dt><dd>Undo。直前のMove / Extract / Merge / Swapを1段階だけ戻す</dd></div>
+            <div class="row"><dt><kbd>G</kbd></dt><dd>Gather。対応が必要なAgentを<code>Active Agents</code> Tabへ集める</dd></div>
+            <div class="row"><dt><kbd>R</kbd></dt><dd>Restore。集めたPaneを全部元の場所へ戻す。集約中のみ表示</dd></div>
             <div class="row"><dt><kbd>Q</kbd> / <kbd>Esc</kbd></dt><dd>キャンセル</dd></div>
           </dl>
         </article>
@@ -911,9 +914,22 @@
             <div class="row"><dt>文字入力</dt><dd>Workspace / Tab / Agent / cwd / タイトルを横断してfuzzy絞り込み</dd></div>
             <div class="row"><dt><kbd>N</kbd> / <kbd>W</kbd></dt><dd>新規Tab / 新規Workspaceを作って移動。入力した文字列がそのまま名前になる</dd></div>
             <div class="row"><dt><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Enter</kbd></dt><dd>選択と決定。マウスのクリックとホイールも使える</dd></div>
+            <div class="row"><dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>常にカーソル移動。一覧が画面に収まらないときは自動でスクロールする</dd></div>
             <div class="row"><dt>方向</dt><dd><kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd>で左 / 下 / 上 / 右。設定が<code>ask</code>のときのみ表示</dd></div>
             <div class="row"><dt>サイズ</dt><dd><code>50:50</code> / <code>60:40</code> / <code>40:60</code>。左の数字が元からあるPaneの取り分</dd></div>
             <div class="row"><dt>失敗時</dt><dd><kbd>R</kbd>で最新状態を取り直してやり直す</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Pane Manager · Gather</h3>
+          <dl class="rows">
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>M</kbd> <kbd>G</kbd> <kbd>4</kbd></dt><dd>対応が必要なAgentを4 Pane / Tabで<code>Active Agents</code>へ集約</dd></div>
+            <div class="row"><dt><kbd>2</kbd> / <kbd>3</kbd> / <kbd>4</kbd></dt><dd>1 Tabあたりのpane数。5つ以上は<code>Active Agents 1</code> <code>2</code>…とTabが増える</dd></div>
+            <div class="row"><dt><kbd>W</kbd> / <kbd>A</kbd></dt><dd>対象範囲を現在のWorkspace / 全Workspaceに</dd></div>
+            <div class="row"><dt>優先度</dt><dd><code>blocked</code> → <code>done</code> → <code>working</code>の順。同じ状態なら変化が新しいものが先</dd></div>
+            <div class="row"><dt>対象外</dt><dd><code>idle</code>と、Agentが検出されていないPane（shell / dev server / log）</dd></div>
+            <div class="row"><dt><kbd>Prefix</kbd> <kbd>M</kbd> <kbd>R</kbd></dt><dd>Restore。元のTab・元の隣・元の並び順まで戻す。Tabが消えていたら作り直す</dd></div>
+            <div class="row"><dt>Refresh</dt><dd>集約中にもう一度Gatherすると現在の状態で組み直す。<em>自動では動かない</em></dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -923,7 +939,7 @@
             <div class="row"><dt><kbd>E</kbd></dt><dd>Equalize。Tab内の全Paneを等しい面積にする</dd></div>
             <div class="row"><dt><kbd>G</kbd></dt><dd>Grid。だいたい正方形になるよう格子状に並べる</dd></div>
             <div class="row"><dt><kbd>C</kbd> / <kbd>R</kbd></dt><dd>Columns / Rows。全Paneを横一列 / 縦一列に並べる</dd></div>
-            <div class="row"><dt><kbd>H</kbd> / <kbd>L</kbd> / <kbd>K</kbd></dt><dd>Main Left / Right / Top。現在Paneを大きく、残りを反対側へ積む</dd></div>
+            <div class="row"><dt><kbd>H</kbd> / <kbd>L</kbd> / <kbd>T</kbd></dt><dd>Main Left / Right / Top。現在Paneを大きく、残りを反対側へ積む</dd></div>
             <div class="row"><dt><kbd>Z</kbd></dt><dd>現在Paneのズームを切り替え</dd></div>
             <div class="row"><dt>現在の配置</dt><dd>すでにその形になっている項目には<code>current</code>と出る</dd></div>
           </dl>
@@ -950,8 +966,9 @@
         <article class="card" data-search-card>
           <h3>右クリック / CLI</h3>
           <dl class="rows">
-            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Layout / Go to Paneが並ぶ</dd></div>
-            <div class="row"><dt>Tab右クリック</dt><dd>Merge Into / Layoutが並ぶ</dd></div>
+            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Gather / Layout / Go to Paneが並ぶ</dd></div>
+            <div class="row"><dt>Tab右クリック</dt><dd>Merge Into / Gather / Refresh / Restore / Layoutが並ぶ</dd></div>
+            <div class="row"><dt><code>... gather 4 --scope all</code></dt><dd>Gatherをスクリプトから。<code>refresh-gather</code> / <code>restore-gather</code>も同様</dd></div>
             <div class="row"><dt><code>herdr plugin list --json</code></dt><dd>導入済みプラグインとActionを確認</dd></div>
             <div class="row"><dt><code>herdr plugin action invoke &lt;id&gt; --plugin &lt;plugin&gt;</code></dt><dd>Actionを直接実行</dd></div>
             <div class="row"><dt><code>... doctor</code></dt><dd>各プラグインが見えている状態をID付きで表示</dd></div>
@@ -960,7 +977,8 @@
         <article class="card wide" data-search-card>
           <h3>導入とメンテナンス</h3>
           <dl class="rows">
-            <div class="row"><dt>Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（4つとも同様）</dd></div>
+            <div class="row"><dt>一括導入</dt><dd><code>zsh install.sh</code>でclone・build・linkまで自動。何度実行しても安全</dd></div>
+            <div class="row"><dt>個別Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（4つとも同様）</dd></div>
             <div class="row"><dt>Build</dt><dd><code>cargo build --release</code>。<code>herdr plugin link</code>時にも自動で走る</dd></div>
             <div class="row"><dt>設定</dt><dd><code>herdr plugin config-dir &lt;plugin&gt;</code>が出すディレクトリに<code>config.toml</code>を置く</dd></div>
             <div class="row"><dt>Unlink</dt><dd><code>herdr plugin unlink pane-manager</code></dd></div>
@@ -1417,7 +1435,7 @@
         <article class="card" data-search-card>
           <h3>Reload &amp; setup</h3>
           <dl class="rows">
-            <div class="row"><dt><code>zsh install.sh</code></dt><dd>依存導入とシンボリックリンクをまとめて設定</dd></div>
+            <div class="row"><dt><code>zsh install.sh</code></dt><dd>依存導入・シンボリックリンク・Herdrプラグインの導入をまとめて設定</dd></div>
             <div class="row"><dt><code>source ~/.zshrc</code></dt><dd>Zsh / Starshipを再読み込み</dd></div>
             <div class="row"><dt><code>tmux source-file ~/.tmux.conf</code></dt><dd>tmux設定を再読み込み</dd></div>
             <div class="row"><dt><code>herdr server reload-config</code></dt><dd>Herdr設定を再読み込み</dd></div>

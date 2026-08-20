@@ -116,6 +116,10 @@ directory = "~/.herdr/worktrees"
 
 [ui]
 
+# 新規Tab/Workspace作成時に名前入力フォームを出さない。名前は後からrename_tabで変更する。
+prompt_new_tab_name = false
+prompt_new_workspace_name = false
+
 # 対応が必要なAgentを上に並べ、Pane境界にもAgent名を表示する。
 agent_panel_sort = "priority"
 show_agent_labels_on_pane_borders = true

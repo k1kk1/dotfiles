@@ -901,8 +901,8 @@
             <div class="row"><dt><kbd>M</kbd></dt><dd>移動先を絞り込んで選ぶ。方向とサイズも指定できる</dd></div>
             <div class="row"><dt><kbd>S</kbd></dt><dd>別のPaneと入れ替える。別Tab・別Workspaceも可</dd></div>
             <div class="row"><dt><kbd>E</kbd></dt><dd>現在Paneを新しいTabへ切り出す。即実行</dd></div>
-            <div class="row"><dt><kbd>C</kbd></dt><dd>現在Tabの全Paneを別Tabへ統合（Combine）</dd></div>
-            <div class="row"><dt><kbd>U</kbd></dt><dd>Undo。直前のMove / Extract / Merge / Swapを1段階だけ戻す</dd></div>
+            <div class="row"><dt><kbd>F</kbd></dt><dd>Fold into…。現在Tabの全Paneを別Tabへ畳む</dd></div>
+            <div class="row"><dt><kbd>U</kbd></dt><dd>Undo。直前のMove / Extract / Fold / Swapを1段階だけ戻す</dd></div>
             <div class="row"><dt><kbd>G</kbd></dt><dd>Gather。対応が必要なAgentを<code>Active Agents</code> Tabへ集める</dd></div>
             <div class="row"><dt><kbd>R</kbd></dt><dd>Restore。集めたPaneを全部元の場所へ戻す。集約中のみ表示</dd></div>
             <div class="row"><dt><kbd>Q</kbd> / <kbd>Esc</kbd></dt><dd>キャンセル</dd></div>
@@ -1014,8 +1014,8 @@
         <article class="card" data-search-card>
           <h3>右クリック / CLI</h3>
           <dl class="rows">
-            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Gather / Layout / Zoom / Restore / Go to Pane / Openが並ぶ</dd></div>
-            <div class="row"><dt>Tab右クリック</dt><dd>Merge Into / Gather / Refresh / Restore / Layoutが並ぶ</dd></div>
+            <div class="row"><dt>Pane右クリック</dt><dd>Move to / Swap with / Extract / Fold into / Gather / Layout / Zoom / Restore / Go to Pane / Openが並ぶ</dd></div>
+            <div class="row"><dt>Tab右クリック</dt><dd>Fold Into Tab / Gather / Refresh / Restore / Layoutが並ぶ</dd></div>
             <div class="row"><dt>Open系</dt><dd>Reveal in Finder / Open in Editor / Open Repository in Editor / Copy Directory Path</dd></div>
             <div class="row"><dt><code>... gather 4 --scope all</code></dt><dd>Gatherをスクリプトから。<code>refresh-gather</code> / <code>restore-gather</code>も同様</dd></div>
             <div class="row"><dt><code>herdr plugin list --json</code></dt><dd>導入済みプラグインとActionを確認</dd></div>

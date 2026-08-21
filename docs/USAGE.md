@@ -38,7 +38,7 @@ install.sh は以下を自動実行する。何度実行しても安全（冪等
 1. Homebrew ツールのインストール（未インストールのみ）
 2. Zsh プラグインの clone（未 clone のみ）
 3. シンボリックリンクの作成（`~/.zshrc`, `~/.gitconfig`, `~/.config/starship.toml`, `~/.config/ghostty/config`, `~/.config/herdr/config.toml`, `~/.tmux.conf`, `~/.vim`, `~/.vimrc`, `~/.config/nvim`）
-4. Herdr プラグインの clone・build・link（4種）
+4. Herdr プラグインの clone・build・link（5種）
 5. Zsh、tmux、Herdrの設定と fzf の動作確認、プラグインの有効数
 
 ### Herdr プラグイン

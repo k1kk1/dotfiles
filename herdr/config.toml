@@ -55,8 +55,17 @@ height = "80%"
 # Plugins
 # ==============================================================================
 #
-# ~/src/herdr-plugins の4プラグイン。Herdrにはplugin actionへ直接キーを割り当てる
+# ~/src/herdr-plugins の5プラグイン。Herdrにはplugin actionへ直接キーを割り当てる
 # 仕組みがないため、各プラグインのバイナリをpopupで起動する。
+#
+# descriptionはHerdr自身のキー一覧画面(prefix+?)に出るので、
+# 自分向けのメモではなく表示用のラベルとして書くこと。
+#
+# キーの選び方: Herdrの既定が単文字をほぼ埋めている。
+#   使用済み: ? c e g h j k l n o p q r s v w x z - tab 数字
+#   空き:     a d i u y space (+ shift+s / shift+l)
+# macOSではOptionが押しにくいので、空きから語呂の合うものを充てている。
+# 既定を確認する: herdr --default-config | grep 'prefix+'
 #
 #   herdr plugin link ~/src/herdr-plugins/herdr-pane-manager   (他3つも同様)
 #
@@ -68,17 +77,17 @@ height = "80%"
 key = "prefix+m"
 type = "popup"
 command = "exec \"$HOME/src/herdr-plugins/herdr-pane-manager/target/release/herdr-pane-manager\" ui manager"
-description = "pane manager"
+description = "Pane を別 Tab へ移動・交換・集約"
 width = "60%"
 height = "70%"
 
 [[keys.command]]
 
 # 同一Tab内のレイアウト調整。Equalize / Grid / Main Left など。
-key = "prefix+alt+l"
+key = "prefix+shift+l"
 type = "popup"
 command = "exec \"$HOME/src/herdr-plugins/herdr-layout-tools/target/release/herdr-layout-tools\" ui"
-description = "layout tools"
+description = "Tab 内のレイアウトを整える"
 width = "50%"
 height = "60%"
 
@@ -88,19 +97,47 @@ height = "60%"
 key = "prefix+f"
 type = "popup"
 command = "exec \"$HOME/src/herdr-plugins/herdr-navigator/target/release/herdr-navigator\" ui panes"
-description = "navigator"
+description = "Pane / Agent / Tab を検索して移動"
 width = "70%"
 height = "70%"
 
 [[keys.command]]
 
 # 全プラグインのActionを横断検索して実行。
-key = "prefix+alt+p"
+key = "prefix+space"
 type = "popup"
 command = "exec \"$HOME/src/herdr-plugins/herdr-command-palette/target/release/herdr-command-palette\" ui"
-description = "command palette"
+description = "全プラグインの Action を検索"
 width = "70%"
 height = "70%"
+
+[[keys.command]]
+
+# 起動中・停止中のHerdrセッションを一覧して、新しいウィンドウで開く。
+# attach は今いるセッションの中では実行できない（nested herdr）ため、
+# 外側のターミナルの新しいウィンドウが開く。
+# Tabで Manage / Claude / Codex に切り替わる。
+key = "prefix+shift+s"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-sessions/target/release/herdr-sessions\" ui open"
+description = "Herdr セッション一覧・開く"
+width = "70%"
+height = "60%"
+
+[[keys.command]]
+
+# Claude Code / Codex の過去の会話を一覧して再開する。既定で全件・両方まとめて。
+# こちらは外部プログラムを起動するだけなので、今のセッションの中で再開できる。
+#   Enter        新しいWorkspace
+#   Shift+Enter  新しいTab
+#   Opt+Enter    今のPaneを分割
+# TabでAll → Claude → Codexと絞り込む。Shift+TabでHerdrセッション一覧へ。
+key = "prefix+a"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-sessions/target/release/herdr-sessions\" ui all"
+description = "Claude Code / Codex の会話を再開"
+width = "70%"
+height = "60%"
 
 # ==============================================================================
 # Git worktree
@@ -166,5 +203,11 @@ resume_agents_on_restore = true
 reveal_hidden_cursor_for_cjk_ime = true
 cjk_ime_agents = ["claude", "codex"]
 
-# Google日本語入力で英数入力から戻らない場合があるため有効化しない。
-# switch_ascii_input_source_in_prefix = true
+# prefix中だけASCII入力に切り替え、抜けたら元に戻す。
+# 日本語入力のままCtrl-bを押すとPrefix後のキーが入力に食われて失敗するため。
+#
+# 以前はGoogle日本語入力が英数から戻らないので無効化していたが、
+# 現在の入力ソースはABCとことえり(Kotoeri.RomajiTyping)だけで、
+# ことえりへの復帰はHerdrが公式に対応している経路。
+# 確認: defaults read com.apple.HIToolbox AppleEnabledInputSources
+switch_ascii_input_source_in_prefix = true

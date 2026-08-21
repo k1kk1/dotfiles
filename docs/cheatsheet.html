@@ -854,7 +854,7 @@
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>G</kbd></dt><dd><code>lazygit</code>を90% × 90%のPopupで開く</dd></div>
             <div class="row"><dt><kbd>Prefix</kbd> <kbd>T</kbd></dt><dd>一時ターミナルを80% × 80%のPopupで開く</dd></div>
             <div class="row"><dt>Close popup</dt><dd><code>q</code>や<code>exit</code>で閉じ、元のPaneへ戻る</dd></div>
-            <div class="row"><dt>Plugins</dt><dd>Pane Manager / Layout Tools / Navigator / Command Paletteは<a href="#plugins">Plugins</a>を参照</dd></div>
+            <div class="row"><dt>Plugins</dt><dd>Pane Manager / Layout Tools / Navigator / Command Palette / Sessions / Resumeは<a href="#plugins">Plugins</a>を参照</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -935,7 +935,7 @@
         <article class="card" data-search-card>
           <h3>Layout Tools</h3>
           <dl class="rows">
-            <div class="row" data-default="unset" data-current="Prefix + Alt + L"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>L</kbd></dt><dd>同一Tab内のレイアウトメニューを開く</dd></div>
+            <div class="row" data-default="unset" data-current="Prefix + Shift + L"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>L</kbd></dt><dd>同一Tab内のレイアウトメニューを開く</dd></div>
             <div class="row"><dt><kbd>E</kbd></dt><dd>Equalize。Tab内の全Paneを等しい面積にする</dd></div>
             <div class="row"><dt><kbd>G</kbd></dt><dd>Grid。だいたい正方形になるよう格子状に並べる</dd></div>
             <div class="row"><dt><kbd>C</kbd> / <kbd>R</kbd></dt><dd>Columns / Rows。全Paneを横一列 / 縦一列に並べる</dd></div>
@@ -957,10 +957,44 @@
         <article class="card" data-search-card>
           <h3>Command Palette</h3>
           <dl class="rows">
-            <div class="row" data-default="unset" data-current="Prefix + Alt + P"><dt><kbd>Prefix</kbd> <kbd>Alt</kbd> <kbd>P</kbd></dt><dd>全プラグインのActionを横断検索して実行</dd></div>
+            <div class="row" data-default="unset" data-current="Prefix + Space"><dt><kbd>Prefix</kbd> <kbd>Space</kbd></dt><dd>全プラグインのActionを横断検索して実行</dd></div>
             <div class="row"><dt>文字入力</dt><dd>プラグイン名とAction名の両方にマッチ。<code>pane mo</code>で<code>Pane Manager: Move to Tab...</code></dd></div>
             <div class="row"><dt>Context</dt><dd>Palette自身ではなく、開いた時点でフォーカスしていたPaneが対象になる</dd></div>
             <div class="row"><dt>自動追随</dt><dd>プラグインを追加すると設定なしで一覧に出る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Sessions</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + Shift + S"><dt><kbd>Prefix</kbd> <kbd>Shift</kbd> <kbd>S</kbd></dt><dd>起動中・停止中のHerdrセッションを一覧して開く</dd></div>
+            <div class="row"><dt>文字入力</dt><dd>セッション名だけでなく、中のWorkspace名にもマッチする</dd></div>
+            <div class="row"><dt><kbd>Enter</kbd></dt><dd><strong>新しいターミナルウィンドウ</strong>で開く。今のセッションの中には開けない（nested herdr）</dd></div>
+            <div class="row"><dt><kbd>Tab</kbd></dt><dd>Open ⇄ Manage を切替</dd></div>
+            <div class="row"><dt><kbd>Shift</kbd> <kbd>Tab</kbd></dt><dd>Claude Code / Codexの会話一覧へ切替</dd></div>
+            <div class="row"><dt>Manage</dt><dd>起動中をStop（レイアウトは残る）/ 停止中をDelete。どちらも確認あり</dd></div>
+            <div class="row"><dt>停止中の行</dt><dd>最終使用日時とWorkspace名が出る。開いたら何が戻るか分かる</dd></div>
+            <div class="row"><dt>Alfred</dt><dd><code>herdr-sessions alfred install</code>のあと、Alfredで<code>hs</code></dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Resume Agent Session</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + A"><dt><kbd>Prefix</kbd> <kbd>A</kbd></dt><dd>Claude Code / Codexの過去の会話を<strong>まとめて</strong>一覧して再開。既定で全件</dd></div>
+            <div class="row"><dt><kbd>Enter</kbd></dt><dd><strong>新しいWorkspace</strong>で再開。会話名がWorkspace名になる</dd></div>
+            <div class="row"><dt><kbd>Shift</kbd> <kbd>Enter</kbd></dt><dd>今のWorkspaceに<strong>新しいTab</strong>を作って再開</dd></div>
+            <div class="row"><dt><kbd>Opt</kbd> <kbd>Enter</kbd></dt><dd>今のPaneを<strong>分割</strong>して再開</dd></div>
+            <div class="row"><dt><kbd>Tab</kbd></dt><dd><strong>LLMで絞る。</strong>All → Claude → Codex。会話一覧から出ない</dd></div>
+            <div class="row"><dt><kbd>Shift</kbd> <kbd>Tab</kbd></dt><dd>Herdrセッション一覧へ切替。もう一度で戻る</dd></div>
+            <div class="row"><dt>現在地</dt><dd>見出し下の帯<code>Tab ▸ all claude codex</code>で選択中が反転表示される</dd></div>
+            <div class="row"><dt>LLMの表示</dt><dd>行の<strong>右端</strong>に<code>(Claude)</code> / <code>(Codex)</code>。見出しは左端で揃う。Allのときだけ付く</dd></div>
+            <div class="row"><dt>ツール名で絞る</dt><dd><code>claude</code> / <code>codex</code>と打っても絞れる</dd></div>
+            <div class="row"><dt>見出し</dt><dd>Claudeは自分で付けた会話名。Codexは名前を持たないので最初のプロンプト</dd></div>
+            <div class="row"><dt>文字入力</dt><dd>会話名・パス・ブランチ・プロンプト本文にまとめてマッチ</dd></div>
+            <div class="row"><dt><code>●</code> looks open</dt><dd>その会話がもう画面に出ていそう、の意。cwdと会話名の一致による推定</dd></div>
+            <div class="row"><dt>新しいウィンドウは不要</dt><dd><code>claude --resume</code>はただのプログラムなので今のセッションの中で動く</dd></div>
+            <div class="row"><dt>件数</dt><dd>上限なし。各ファイルの先頭か末尾しか読まないので、515MB・91会話でも80ms</dd></div>
+            <div class="row"><dt>絞り込み前提</dt><dd>全部出るので、目で探さず打って絞る。29日前の会話まで並ぶ</dd></div>
+            <div class="row"><dt>遅くなったら</dt><dd><code>recent = 50</code>で上限。<strong>読む件数の上限でもある</strong>ので効く</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -978,7 +1012,9 @@
           <h3>導入とメンテナンス</h3>
           <dl class="rows">
             <div class="row"><dt>一括導入</dt><dd><code>zsh install.sh</code>でclone・build・linkまで自動。何度実行しても安全</dd></div>
-            <div class="row"><dt>個別Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（4つとも同様）</dd></div>
+            <div class="row"><dt>日本語入力とPrefix</dt><dd><code>switch_ascii_input_source_in_prefix</code>でPrefix中だけASCIIに切替。IMEにキーを食われて失敗するのを防ぐ</dd></div>
+            <div class="row"><dt>キーの空き</dt><dd>Herdrの既定が単文字をほぼ占有。空きは<code>a d i u y space</code>。<code>herdr --default-config | grep prefix+</code>で確認</dd></div>
+            <div class="row"><dt>個別Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（5つとも同様）</dd></div>
             <div class="row"><dt>Build</dt><dd><code>cargo build --release</code>。<code>herdr plugin link</code>時にも自動で走る</dd></div>
             <div class="row"><dt>設定</dt><dd><code>herdr plugin config-dir &lt;plugin&gt;</code>が出すディレクトリに<code>config.toml</code>を置く</dd></div>
             <div class="row"><dt>Unlink</dt><dd><code>herdr plugin unlink pane-manager</code></dd></div>

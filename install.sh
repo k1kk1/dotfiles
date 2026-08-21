@@ -112,7 +112,7 @@ _head "Herdr プラグイン"
 
 HERDR_PLUGINS_REPO="${HERDR_PLUGINS_REPO:-git@github.com:k1kk1/herdr-plugins.git}"
 HERDR_PLUGINS_DIR="${HERDR_PLUGINS_DIR:-$HOME/src/herdr-plugins}"
-HERDR_PLUGINS=(herdr-pane-manager herdr-layout-tools herdr-navigator herdr-command-palette)
+HERDR_PLUGINS=(herdr-pane-manager herdr-layout-tools herdr-navigator herdr-command-palette herdr-sessions)
 
 _herdr_plugins_setup() {
   # cargo は rustup 経由で入れている想定。PATH に無いことがあるので補う。
@@ -217,10 +217,10 @@ fi
 # Herdr プラグイン
 if herdr plugin list &>/dev/null; then
   _linked=$(herdr plugin list 2>/dev/null | grep -c "enabled" || true)
-  if [[ "$_linked" -ge 4 ]]; then
+  if [[ "$_linked" -ge 5 ]]; then
     _ok "Herdr プラグイン $_linked 個が有効"
   else
-    _fail "Herdr プラグインが $_linked 個しか有効になっていません（4個必要）"
+    _fail "Herdr プラグインが $_linked 個しか有効になっていません（5個必要）"
   fi
 else
   _skip "Herdr サーバ未起動のためプラグイン確認をスキップ"

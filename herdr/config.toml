@@ -55,7 +55,7 @@ height = "80%"
 # Plugins
 # ==============================================================================
 #
-# ~/src/herdr-plugins の5プラグイン。Herdrにはplugin actionへ直接キーを割り当てる
+# ~/src/herdr-plugins の6プラグイン。Herdrにはplugin actionへ直接キーを割り当てる
 # 仕組みがないため、各プラグインのバイナリをpopupで起動する。
 #
 # descriptionはHerdr自身のキー一覧画面(prefix+?)に出るので、
@@ -63,7 +63,7 @@ height = "80%"
 #
 # キーの選び方: Herdrの既定が単文字をほぼ埋めている。
 #   使用済み: ? c e g h j k l n o p q r s v w x z - tab 数字
-#   空き:     a d i u y space (+ shift+s / shift+l)
+#   空き:     u y space (+ shift+s / shift+l)  ... a d i はここで使用
 # macOSではOptionが押しにくいので、空きから語呂の合うものを充てている。
 # 既定を確認する: herdr --default-config | grep 'prefix+'
 #
@@ -138,6 +138,28 @@ command = "exec \"$HOME/src/herdr-plugins/herdr-sessions/target/release/herdr-se
 description = "Claude Code / Codex の会話を再開"
 width = "70%"
 height = "60%"
+
+[[keys.command]]
+
+# 今の Pane の作業ディレクトリを、ターミナルの外へ渡す。
+# Finder / VS Code / クリップボードから選ぶ。g で git リポジトリのルートに切替。
+# どのディレクトリかは foreground_cwd → cwd の順で決まるので、Agent が別の場所で
+# 起動されていても画面に映っているほうを指す。
+key = "prefix+d"
+type = "popup"
+command = "exec \"$HOME/src/herdr-plugins/herdr-open/target/release/herdr-open\" ui"
+description = "Pane の作業ディレクトリを開く"
+width = "50%"
+height = "40%"
+
+[[keys.command]]
+
+# 選ばずに一発でエディタへ。popup を出さないので type は shell（detach 実行）。
+# どの Pane で押したかは Herdr が渡す HERDR_ACTIVE_PANE_ID から解決される。
+key = "prefix+i"
+type = "shell"
+command = "exec \"$HOME/src/herdr-plugins/herdr-open/target/release/herdr-open\" open editor --git-root"
+description = "リポジトリを VS Code で開く"
 
 # ==============================================================================
 # Git worktree

@@ -103,7 +103,7 @@ _symlink "$DOTFILES_DIR/vim/init.vim"        "$HOME/.vimrc"
 # 4. Herdr プラグイン
 # ------------------------------------------------------------------------------
 #
-# 自作プラグイン4種を clone → build → link する。
+# 自作プラグイン6種を clone → build → link する。
 # herdr plugin link はマニフェストの [[build]]（cargo build --release）を
 # 実行するので、ここでは link を呼ぶだけでビルドまで済む。差分が無ければ
 # cargo が即座に返すため、毎回実行しても待たされない。
@@ -112,7 +112,7 @@ _head "Herdr プラグイン"
 
 HERDR_PLUGINS_REPO="${HERDR_PLUGINS_REPO:-git@github.com:k1kk1/herdr-plugins.git}"
 HERDR_PLUGINS_DIR="${HERDR_PLUGINS_DIR:-$HOME/src/herdr-plugins}"
-HERDR_PLUGINS=(herdr-pane-manager herdr-layout-tools herdr-navigator herdr-command-palette herdr-sessions)
+HERDR_PLUGINS=(herdr-pane-manager herdr-layout-tools herdr-navigator herdr-command-palette herdr-sessions herdr-open)
 
 _herdr_plugins_setup() {
   # cargo は rustup 経由で入れている想定。PATH に無いことがあるので補う。

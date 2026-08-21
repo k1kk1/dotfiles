@@ -940,8 +940,20 @@
             <div class="row"><dt><kbd>G</kbd></dt><dd>Grid。だいたい正方形になるよう格子状に並べる</dd></div>
             <div class="row"><dt><kbd>C</kbd> / <kbd>R</kbd></dt><dd>Columns / Rows。全Paneを横一列 / 縦一列に並べる</dd></div>
             <div class="row"><dt><kbd>H</kbd> / <kbd>L</kbd> / <kbd>T</kbd></dt><dd>Main Left / Right / Top。現在Paneを大きく、残りを反対側へ積む</dd></div>
-            <div class="row"><dt><kbd>Z</kbd></dt><dd>現在Paneのズームを切り替え</dd></div>
+            <div class="row"><dt><kbd>Z</kbd></dt><dd>現在Paneのズームを切り替え。Herdr本体の<kbd>Prefix</kbd> <kbd>Z</kbd>と同じ<code>pane.zoom</code></dd></div>
             <div class="row"><dt>現在の配置</dt><dd>すでにその形になっている項目には<code>current</code>と出る</dd></div>
+          </dl>
+        </article>
+        <article class="card" data-search-card>
+          <h3>Open</h3>
+          <dl class="rows">
+            <div class="row" data-default="unset" data-current="Prefix + D"><dt><kbd>Prefix</kbd> <kbd>D</kbd></dt><dd>今のPaneの作業ディレクトリを、ターミナルの外へ渡す</dd></div>
+            <div class="row" data-default="unset" data-current="Prefix + I"><dt><kbd>Prefix</kbd> <kbd>I</kbd></dt><dd>選ばずに一発。リポジトリのルートをVS Codeで開く</dd></div>
+            <div class="row"><dt><kbd>F</kbd> / <kbd>E</kbd> / <kbd>C</kbd></dt><dd>Finderで開く / エディタで開く / パスをクリップボードへ</dd></div>
+            <div class="row"><dt><kbd>G</kbd></dt><dd>gitリポジトリのルートに切替。ルートと同じ場所にいるときは出ない</dd></div>
+            <div class="row"><dt>どのcwd</dt><dd><code>foreground_cwd</code>→<code>cwd</code>の順。<strong>画面に映っているほう</strong>を指す</dd></div>
+            <div class="row"><dt>開き先の差し替え</dt><dd><code>[[target]]</code>で。argvなのでパスに空白や引用符が入っても壊れない</dd></div>
+            <div class="row"><dt>入っていないアプリ</dt><dd>PATHに無い行は<strong>一覧に出さない</strong>。GUI起動はdetachなので無反応に気づけないため</dd></div>
           </dl>
         </article>
         <article class="card" data-search-card>
@@ -1002,8 +1014,9 @@
         <article class="card" data-search-card>
           <h3>右クリック / CLI</h3>
           <dl class="rows">
-            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Gather / Layout / Go to Paneが並ぶ</dd></div>
+            <div class="row"><dt>Pane右クリック</dt><dd>Move / Swap / Extract / Merge / Gather / Layout / Zoom / Restore / Go to Pane / Openが並ぶ</dd></div>
             <div class="row"><dt>Tab右クリック</dt><dd>Merge Into / Gather / Refresh / Restore / Layoutが並ぶ</dd></div>
+            <div class="row"><dt>Open系</dt><dd>Reveal in Finder / Open in Editor / Open Repository in Editor / Copy Directory Path</dd></div>
             <div class="row"><dt><code>... gather 4 --scope all</code></dt><dd>Gatherをスクリプトから。<code>refresh-gather</code> / <code>restore-gather</code>も同様</dd></div>
             <div class="row"><dt><code>herdr plugin list --json</code></dt><dd>導入済みプラグインとActionを確認</dd></div>
             <div class="row"><dt><code>herdr plugin action invoke &lt;id&gt; --plugin &lt;plugin&gt;</code></dt><dd>Actionを直接実行</dd></div>
@@ -1015,8 +1028,8 @@
           <dl class="rows">
             <div class="row"><dt>一括導入</dt><dd><code>zsh install.sh</code>でclone・build・linkまで自動。何度実行しても安全</dd></div>
             <div class="row"><dt>日本語入力とPrefix</dt><dd><code>switch_ascii_input_source_in_prefix</code>でPrefix中だけASCIIに切替。IMEにキーを食われて失敗するのを防ぐ</dd></div>
-            <div class="row"><dt>キーの空き</dt><dd>Herdrの既定が単文字をほぼ占有。空きは<code>a d i u y space</code>。<code>herdr --default-config | grep prefix+</code>で確認</dd></div>
-            <div class="row"><dt>個別Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（5つとも同様）</dd></div>
+            <div class="row"><dt>キーの空き</dt><dd>Herdrの既定が単文字をほぼ占有。空きは<code>u y space</code>（<code>a d i</code>は使用中）。<code>herdr --default-config | grep prefix+</code>で確認</dd></div>
+            <div class="row"><dt>個別Link</dt><dd><code>herdr plugin link ~/src/herdr-plugins/herdr-pane-manager</code>（6つとも同様）</dd></div>
             <div class="row"><dt>Build</dt><dd><code>cargo build --release</code>。<code>herdr plugin link</code>時にも自動で走る</dd></div>
             <div class="row"><dt>設定</dt><dd><code>herdr plugin config-dir &lt;plugin&gt;</code>が出すディレクトリに<code>config.toml</code>を置く</dd></div>
             <div class="row"><dt>Unlink</dt><dd><code>herdr plugin unlink pane-manager</code></dd></div>

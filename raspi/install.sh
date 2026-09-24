@@ -29,7 +29,7 @@ _head() { printf '\n\e[34m==>\e[0m \e[1m%s\e[0m\n' "$1"; }
 
 _head "apt パッケージ"
 
-APT_PKGS=(zsh fzf fd-find bat eza ripgrep jq direnv zoxide starship tmux lazygit vim neovim
+APT_PKGS=(zsh fzf fd-find bat eza ripgrep jq direnv zoxide starship tmux lazygit vim neovim btop
           build-essential pkg-config curl git)
 missing=()
 for pkg in "${APT_PKGS[@]}"; do
@@ -126,6 +126,16 @@ _symlink "$RASPI_DIR/zsh/zlogout"                "$HOME/.zlogout"
 _symlink "$RASPI_DIR/zsh/fzf.zsh"                "$HOME/.fzf.zsh"
 _symlink "$RASPI_DIR/lazygit/config.yml"         "$CONFIG_DIR/lazygit/config.yml"
 _symlink "$RASPI_DIR/bin/prompt-sysinfo"         "$LOCAL_BIN/prompt-sysinfo"
+_symlink "$RASPI_DIR/btop/raspi.theme"           "$CONFIG_DIR/btop/themes/raspi.theme"
+
+# btop.conf は btop が終了時に書き換えるのでリンクせず、無いときだけ初期値を置く
+if [[ -e "$CONFIG_DIR/btop/btop.conf" ]]; then
+  _skip "~/.config/btop/btop.conf (already exists)"
+else
+  printf '%s\n' 'color_theme = "raspi"' 'theme_background = True' 'truecolor = True' \
+    'update_ms = 2000' 'proc_sorting = "cpu lazy"' > "$CONFIG_DIR/btop/btop.conf"
+  _ok "~/.config/btop/btop.conf（テーマ raspi）"
+fi
 
 # ------------------------------------------------------------------------------
 # 5. ログインシェル

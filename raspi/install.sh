@@ -30,6 +30,7 @@ _head() { printf '\n\e[34m==>\e[0m \e[1m%s\e[0m\n' "$1"; }
 _head "apt パッケージ"
 
 APT_PKGS=(zsh fzf fd-find bat eza ripgrep jq direnv zoxide starship tmux lazygit vim neovim btop nvme-cli sqlite3
+          python3-matplotlib python3-requests
           build-essential pkg-config curl git)
 missing=()
 for pkg in "${APT_PKGS[@]}"; do
@@ -268,6 +269,13 @@ sudo install -m 644 "$RASPI_DIR/alert/raspi-alert.timer" /etc/systemd/system/ras
 sudo systemctl daemon-reload
 sudo systemctl enable --now -q raspi-alert.timer
 _ok "raspi-notify / raspi-alert.timer（5 分ごと）"
+
+sudo install -m 755 "$RASPI_DIR/report/raspi-daily-report" /usr/local/bin/raspi-daily-report
+sudo install -m 644 "$RASPI_DIR/report/raspi-daily-report.service" /etc/systemd/system/raspi-daily-report.service
+sudo install -m 644 "$RASPI_DIR/report/raspi-daily-report.timer" /etc/systemd/system/raspi-daily-report.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now -q raspi-daily-report.timer
+_ok "raspi-daily-report.timer（毎朝 8 時に過去 24 時間のグラフ）"
 
 mkdir -p "$CONFIG_DIR/raspi-notify" && chmod 700 "$CONFIG_DIR/raspi-notify"
 if [[ -s "$CONFIG_DIR/raspi-notify/discord-webhook" ]]; then

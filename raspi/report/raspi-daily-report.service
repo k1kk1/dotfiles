@@ -1,0 +1,11 @@
+# raspi: 過去 24 時間のグラフを Discord に送る（raspi-daily-report.timer から起動）
+[Unit]
+Description=Send raspi daily metrics report to Discord
+After=network-online.target prometheus.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kikki
+ExecStart=/usr/local/bin/raspi-daily-report
+Nice=19

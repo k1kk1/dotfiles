@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""raspi-daily-report [--dry-run 出力先.png]
+
+過去 24 時間の CPU・メモリ・温度・ディスクを Prometheus から取り出してグラフにし、
+Discord の Webhook に送る（dotfiles の raspi ブランチで管理。raspi-daily-report.timer から毎朝 8 時に起動）。
+Webhook の URL は raspi-notify と同じ /home/kikki/.config/raspi-notify/discord-webhook を使う。
+グラフの文字は英語（日本語フォントを入れないため）。本文の要約は日本語。
+"""
+import io
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import requests
+
+PROM = os.environ.get("RASPI_PROM", "http://127.0.0.1:9090")
+CONF = os.environ.get("RASPI_NOTIFY_CONF", "/home/kikki/.config/raspi-notify/discord-webhook")
+HOURS = 24
+STEP = 300  # 5 分
+
+# raspi カラーテーマ（raspi/zsh/palette.zsh）
+BG, PANEL, GRID = "#070A06", "#0B1108", "#1A2A10"
+INK, MUTED = "#C8F7A0", "#6B8F3A"
+ACCENT, SECOND, WARN = "#B6FF3B", "#B98BFF", "#FFD23B"
+
+PANELS = [
+    # (タイトル, 単位, y の上限, [(ラベル, 色, PromQL)], 目安の線)
+    ("CPU", "%", 100,
+     [("CPU", ACCENT, '100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])))')], None),
+    ("Memory", "%", 100,
+     [("Memory", ACCENT, "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)")], None),
+    ("Temperature", "°C", None,
+     [("SoC", ACCENT, 'node_thermal_zone_temp{type="cpu-thermal"}'),
+      ("NVMe", SECOND, 'node_hwmon_temp_celsius{chip="nvme_nvme0"}')], 70),
+    ("Disk /", "%", 100,
+     [("Disk", ACCENT, '100 * (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})')], None),
+]
+
+
+def log(msg):
+    # systemd から動くときは標準エラーがそのまま journal に入る（journalctl -t raspi-daily-report）
+    print(msg, file=sys.stderr)
+
+
+def query_range(q, start, end):
+    r = requests.get(f"{PROM}/api/v1/query_range",
+                     params={"query": q, "start": start, "end": end, "step": STEP}, timeout=30)
+    r.raise_for_status()
+    result = r.json()["data"]["result"]
+    if not result:
+        return [], []
+    values = result[0]["values"]
+    return [datetime.fromtimestamp(t) for t, _ in values], [float(v) for _, v in values]
+
+
+def build(start, end):
+    fig, axes = plt.subplots(len(PANELS), 1, figsize=(8, 9), sharex=True, facecolor=BG)
+    lines = []
+    for ax, (title, unit, ymax, series, ref) in zip(axes, PANELS):
+        ax.set_facecolor(PANEL)
+        stats = []
+        for label, color, q in series:
+            ts, vs = query_range(q, start, end)
+            if not vs:
+                stats.append(f"{label} データなし" if len(series) > 1 else "データなし")
+                continue
+            ax.plot(ts, vs, color=color, linewidth=2, solid_capstyle="round")
+            if len(series) > 1:  # 系列が複数のときは線の右端に名前を添える
+                ax.annotate(label, (ts[-1], vs[-1]), xytext=(6, 0), textcoords="offset points",
+                            color=INK, fontsize=9, va="center")
+            name = f"{label} " if len(series) > 1 else ""
+            if title.startswith("Disk"):  # ディスクは 1 日でほぼ変わらないので今の値だけ
+                stats.append(f"今 {vs[-1]:.0f}{unit}")
+            else:
+                stats.append(f"{name}平均 {sum(vs) / len(vs):.0f}{unit} / 最大 {max(vs):.0f}{unit}")
+        if ref is not None:
+            ax.axhline(ref, color=WARN, linewidth=1, linestyle=(0, (4, 4)))
+            ax.annotate(f"{ref}{unit}", (1, ref), xycoords=("axes fraction", "data"),
+                        xytext=(-4, 3), textcoords="offset points", ha="right", color=WARN, fontsize=8)
+        ax.set_ylim(0, ymax if ymax else max(ref or 0, ax.get_ylim()[1]) * 1.1)
+        ax.set_title(f"{title} ({unit})", loc="left", color=INK, fontsize=11, pad=6)
+        ax.grid(axis="y", color=GRID, linewidth=0.8)
+        ax.tick_params(colors=MUTED, labelsize=8, length=0)
+        for s in ax.spines.values():
+            s.set_visible(False)
+        lines.append(f"**{title}**  " + "、".join(stats))
+    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+    axes[-1].xaxis.set_major_locator(mdates.HourLocator(byhour=range(0, 24, 3)))
+    fig.tight_layout(h_pad=1.5)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=110, facecolor=BG)
+    plt.close(fig)
+    return buf.getvalue(), "\n".join(lines)
+
+
+def main():
+    end = int(time.time())
+    start = end - HOURS * 3600
+    try:
+        png, summary = build(start, end)
+    except Exception as e:  # Prometheus が止まっているときなど
+        log(f"グラフを作れなかった: {e}")
+        subprocess.run(["raspi-notify", "warn", "毎朝のレポートを作れませんでした", str(e)], check=False)
+        return 1
+
+    if len(sys.argv) == 3 and sys.argv[1] == "--dry-run":
+        with open(sys.argv[2], "wb") as f:
+            f.write(png)
+        print(summary)
+        return 0
+
+    try:
+        url = open(CONF).readline().strip()
+    except OSError:
+        log(f"Webhook が未設定のため送信しない: {CONF}")
+        return 0
+    if not url.startswith(("https://discord.com/api/webhooks/", "https://discordapp.com/api/webhooks/")):
+        log(f"Webhook の URL の形式が違うため送信しない: {CONF}")
+        return 0
+
+    payload = {
+        "username": socket.gethostname(),
+        "embeds": [{
+            "title": "raspi: 過去 24 時間",
+            "description": summary,
+            "color": 0xB6FF3B,
+            "image": {"url": "attachment://report.png"},
+            "timestamp": datetime.fromtimestamp(end, timezone.utc).isoformat(),
+        }],
+    }
+    r = requests.post(url, data={"payload_json": json.dumps(payload)},
+                      files={"files[0]": ("report.png", png, "image/png")}, timeout=30)
+    if not r.ok:
+        log(f"Discord への送信に失敗: {r.status_code} {r.text[:200]}")
+        return 1
+    log("送信した")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

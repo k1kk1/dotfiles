@@ -1,0 +1,10 @@
+# raspi: 毎朝 8 時にレポートを送る（8 時に止まっていた日は起動後に送る）
+[Unit]
+Description=Send raspi daily metrics report at 08:00
+
+[Timer]
+OnCalendar=*-*-* 08:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,3 @@
+# raspi 専用: ~/.zlogout（dotfiles の raspi ブランチで管理）
+# ログアウト時に手元のターミナルの配色を元に戻す。
+(( $+functions[_raspi_theme_reset] )) && _raspi_theme_reset

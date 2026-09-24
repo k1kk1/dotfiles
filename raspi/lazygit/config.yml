@@ -1,0 +1,15 @@
+# raspi 専用（dotfiles の raspi ブランチで管理）: 黄緑のサイバーパンク配色
+gui:
+  theme:
+    activeBorderColor: ["#B6FF3B", bold]
+    inactiveBorderColor: ["#3D5230"]
+    searchingActiveBorderColor: ["#3BFFD1", bold]
+    optionsTextColor: ["#5CFF7A"]
+    selectedLineBgColor: ["#1A2A10"]
+    inactiveViewSelectedLineBgColor: ["#16220F"]
+    cherryPickedCommitFgColor: ["#070A06"]
+    cherryPickedCommitBgColor: ["#3BFFD1"]
+    markedBaseCommitFgColor: ["#070A06"]
+    markedBaseCommitBgColor: ["#D4FF3B"]
+    unstagedChangesColor: ["#FF3B6B"]
+    defaultFgColor: ["#C8F7A0"]

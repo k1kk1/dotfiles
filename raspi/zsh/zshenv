@@ -1,0 +1,15 @@
+# raspi 専用: ~/.zshenv（dotfiles の raspi ブランチで管理）
+#
+# すべての zsh で最初に読み込まれる。.zshrc は Mac と共通なので、
+# Pi だけに必要な PATH とカラーテーマはここで足す。
+
+# ~/.cargo/bin:      cargo / rustc（herdr プラグインのビルド）
+# ~/.local/bin:      claude / herdr / fd・bat のリンク / yq / prompt-sysinfo
+# ~/.npm-global/bin: npm -g で入れたもの（codex など）
+typeset -U path
+path=("$HOME/.cargo/bin" "$HOME/.local/bin" "$HOME/.npm-global/bin" $path)
+
+# カラーテーマ。対話シェルかつ端末に繋がっているときだけ読み込む。
+# scp や `ssh raspi 'コマンド'`、Agent のコマンド実行では何もしない。
+[[ -o interactive && -t 1 && -r "$HOME/src/dotfiles/raspi/zsh/palette.zsh" ]] &&
+  source "$HOME/src/dotfiles/raspi/zsh/palette.zsh"

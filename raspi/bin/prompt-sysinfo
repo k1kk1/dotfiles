@@ -1,0 +1,21 @@
+#!/bin/sh
+# Starship 用: CPU 使用率・メモリ使用率・SoC 温度を 1 行で出す（raspi 専用）
+#
+# CPU は前回のプロンプト表示からの差分で計算する。サンプリングで待たないので
+# プロンプトが遅くならない。初回だけ比較対象がないので "--" になる。
+cache="${XDG_RUNTIME_DIR:-/tmp}/prompt-sysinfo.$(id -u)"
+
+read -r _ u n s i w q sq st _ < /proc/stat
+idle=$((i + w))
+total=$((u + n + s + i + w + q + sq + st))
+cpu="--"
+if [ -r "$cache" ] && read -r pidle ptotal < "$cache"; then
+  dt=$((total - ptotal)); di=$((idle - pidle))
+  [ "$dt" -gt 0 ] && cpu="$(( 100 * (dt - di) / dt ))%"
+fi
+echo "$idle $total" > "$cache"
+
+mem=$(awk "/^MemTotal:/{t=\$2} /^MemAvailable:/{a=\$2} END{printf \"%d\", (t-a)*100/t}" /proc/meminfo)
+temp=$(( $(cat /sys/class/thermal/thermal_zone0/temp) / 1000 ))
+
+printf "CPU %s MEM %s%% %s°C" "$cpu" "$mem" "$temp"

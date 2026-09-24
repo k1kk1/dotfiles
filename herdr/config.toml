@@ -233,3 +233,33 @@ cjk_ime_agents = ["claude", "codex"]
 # ことえりへの復帰はHerdrが公式に対応している経路。
 # 確認: defaults read com.apple.HIToolbox AppleEnabledInputSources
 switch_ascii_input_source_in_prefix = true
+
+# ==============================================================================
+# raspi 専用テーマ（黄緑のサイバーパンク）
+# ==============================================================================
+#
+# raspi ブランチだけの設定。main をマージしたときは、この節が末尾に残っていることを確認する。
+
+[theme]
+name = "catppuccin"
+
+[theme.custom]
+accent = "#B6FF3B"
+panel_bg = "#070A06"
+sidebar_bg = "#0B1108"
+active_row_bg = "#1A2A10"
+selection_bg = "#24391A"
+surface0 = "#16220F"
+surface1 = "#22331A"
+surface_dim = "#0E1509"
+overlay0 = "#3D5230"
+overlay1 = "#6B8F3A"
+text = "#C8F7A0"
+subtext0 = "#8FB573"
+mauve = "#B98BFF"
+green = "#5CFF7A"
+yellow = "#D4FF3B"
+red = "#FF3B6B"
+blue = "#3BD6A0"
+teal = "#3BFFD1"
+peach = "#FFD23B"

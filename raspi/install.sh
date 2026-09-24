@@ -29,7 +29,7 @@ _head() { printf '\n\e[34m==>\e[0m \e[1m%s\e[0m\n' "$1"; }
 
 _head "apt パッケージ"
 
-APT_PKGS=(zsh fzf fd-find bat eza ripgrep jq direnv zoxide starship tmux lazygit vim neovim btop
+APT_PKGS=(zsh fzf fd-find bat eza ripgrep jq direnv zoxide starship tmux lazygit vim neovim btop nvme-cli sqlite3
           build-essential pkg-config curl git)
 missing=()
 for pkg in "${APT_PKGS[@]}"; do
@@ -261,6 +261,7 @@ _ok "raspi-sd-sync.timer（次回: $(systemctl show raspi-sd-sync.timer -p NextE
 _head "通知と Agent の設定"
 
 sudo install -m 755 "$RASPI_DIR/bin/raspi-notify" /usr/local/bin/raspi-notify
+sudo install -m 755 "$RASPI_DIR/bin/raspi-hc" /usr/local/bin/raspi-hc
 sudo install -m 755 "$RASPI_DIR/alert/raspi-alert" /usr/local/sbin/raspi-alert
 sudo install -m 644 "$RASPI_DIR/alert/raspi-alert.service" /etc/systemd/system/raspi-alert.service
 sudo install -m 644 "$RASPI_DIR/alert/raspi-alert.timer" /etc/systemd/system/raspi-alert.timer
@@ -274,6 +275,12 @@ if [[ -s "$CONFIG_DIR/raspi-notify/discord-webhook" ]]; then
   _skip "Discord の Webhook (already configured)"
 else
   _skip "Discord の Webhook が未設定（~/.config/raspi-notify/discord-webhook に URL を書くと送信される）"
+fi
+if [[ -s "$CONFIG_DIR/raspi-notify/healthchecks-ping-key" ]]; then
+  chmod 600 "$CONFIG_DIR/raspi-notify/healthchecks-ping-key"
+  _skip "Healthchecks.io の ping key (already configured)"
+else
+  _skip "Healthchecks.io の ping key が未設定（~/.config/raspi-notify/healthchecks-ping-key に書くと死活監視が始まる）"
 fi
 
 # Claude Code: 指示書はリンク。settings.json は Claude Code も書き換えるので、必要な部分だけ足し込む

@@ -19,6 +19,7 @@ log()  { echo "[$(date '+%F %T')] $*"; }
 fail() {
   log "失敗: $1"
   echo "fail $(date +%s) $1" > "$STATE/last-result"
+  raspi-hc raspi-backup fail
   command -v raspi-notify >/dev/null && raspi-notify high "microSD へのバックアップに失敗" "$1" || true
   exit 1
 }
@@ -44,6 +45,7 @@ cap=$(blockdev --getsize64 "$SD_ROOT_DEV")
 
 mkdir -p "$MNT"
 start=$(date +%s)
+raspi-hc raspi-backup start
 
 # --- ルート ---
 # /boot/firmware は別のパーティションなので、ルートの複製が終わってからマウントして複製する
@@ -82,4 +84,5 @@ date '+%Y-%m-%d %H:%M' > "$MNT/etc/raspi-backup-info"
 sync
 echo "ok $(date +%s) $(( $(date +%s) - start ))秒" > "$STATE/last-result"
 date +%s > "$STATE/last-success"
+raspi-hc raspi-backup
 log "完了（$(( $(date +%s) - start ))秒）"

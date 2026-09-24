@@ -1,0 +1,19 @@
+#!/bin/bash
+# raspi-hc <チェック名> [start|fail]
+#
+# Healthchecks.io に連絡する（dotfiles の raspi ブランチで管理）。連絡が途絶えると
+# Healthchecks.io が Discord に通知するので、Pi が止まったことに気付ける（死活監視）。
+#
+# ping key は秘密情報なのでリポジトリに入れず、次のファイルに 1 行で書く:
+#   /home/kikki/.config/raspi-notify/healthchecks-ping-key（権限 600）
+# チェックが無ければ自動で作られる（?create=1）。キーが無いときは何もしない。
+
+slug=${1:-} kind=${2:-}
+conf=${RASPI_HC_CONF:-/home/kikki/.config/raspi-notify/healthchecks-ping-key}
+[[ -n $slug ]] || exit 0
+key=$(head -n1 "$conf" 2>/dev/null | tr -d '[:space:]')
+[[ -n $key ]] || exit 0
+
+curl -fsS -m 10 --retry 3 -o /dev/null "https://hc-ping.com/$key/$slug${kind:+/$kind}?create=1" ||
+  logger -t raspi-hc "Healthchecks.io への連絡に失敗: $slug $kind"
+exit 0

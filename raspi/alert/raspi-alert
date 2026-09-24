@@ -81,6 +81,19 @@ else
   alert tailscale high $H6 "Tailscale の状態を取得できません"
 fi
 
+# --- NVMe SSD の健康状態（SSD 自身の記録。壊れる前に気付くため）---
+if smart=$(nvme smart-log /dev/nvme0 -o json 2>/dev/null); then
+  crit=$(jq -r '.critical_warning // 0' <<<"$smart")
+  used=$(jq -r '.percent_used // .percentage_used // 0' <<<"$smart")
+  merr=$(jq -r '.media_errors // 0' <<<"$smart")
+  (( crit != 0 )) && alert nvme-critical high $D1 "NVMe SSD が危険を報告しています（critical_warning=$crit）" "早めにデータを退避してください。microSD の予備環境も確認を"
+  (( used >= 80 )) && alert nvme-wear warn $D1 "NVMe SSD の劣化 ${used}%" "100% が目安の寿命です"
+  (( merr > 0 )) && alert nvme-media warn $D1 "NVMe SSD に読み書きエラーの記録 ${merr} 件"
+fi
+
+# --- 再起動待ちの更新（出たときに 1 回だけ知らせる。once- のキーは復旧を通知しない）---
+[[ -f /run/reboot-required ]] && alert once-reboot info 2592000 "再起動待ちの更新があります" "都合のよいときに sudo reboot"
+
 # --- microSD の予備環境（失敗は raspi-sd-sync が直接通知する。ここでは古さだけ）---
 if [[ -f /var/lib/raspi-sd-sync/last-success ]]; then
   age=$(( (now - $(cat /var/lib/raspi-sd-sync/last-success)) / 86400 ))
@@ -92,7 +105,12 @@ for f in "$STATE"/*; do
   [[ -e $f ]] || continue
   key=${f##*/}
   [[ -n ${seen[$key]:-} ]] && continue
+  [[ $key == once-* ]] && { rm -f "$f"; continue; }
   read -r _ title < "$f"
   raspi-notify info "復旧: $title"
   rm -f "$f"
 done
+
+# --- 死活監視: 最後まで確認できたことを Healthchecks.io に伝える ---
+# 途絶えたら（Pi の停止・フリーズ・ネット断、またはこの確認自体の故障）Healthchecks.io が通知する
+raspi-hc raspi-heartbeat

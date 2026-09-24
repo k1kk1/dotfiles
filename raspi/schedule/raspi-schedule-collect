@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""raspi-schedule-collect [出力先ディレクトリ]
+
+systemd のタイマーと常駐サービスを調べて data.json に書く（dotfiles の raspi ブランチで管理）。
+raspi-schedule-collect.timer（10 分ごと）と .path（ユニットの追加・削除）から root で起動する。
+ページは tailscale serve で https://raspi.tail5255ae.ts.net/schedule/ に公開している。
+
+ユーザー設定かどうか: ユニットファイルが /etc/systemd/system か /home にあるもの、
+または EXTRA_USER に挙げた「自分で入れたパッケージ」のもの。それ以外はシステム（Ubuntu 標準）。
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta
+
+OUT = sys.argv[1] if len(sys.argv) > 1 else "/var/lib/raspi-schedule"
+USER = "kikki"
+DOTFILES = f"/home/{USER}/src/dotfiles/raspi"
+# apt で自分で入れたもの（ユニットファイルは /usr/lib にあるがユーザー設定として扱う）
+EXTRA_USER = {"prometheus", "prometheus-node-exporter", "prometheus-process-exporter",
+              "grafana-server", "tailscaled"}
+WEEK_ITER = 400
+
+
+def run(*args):
+    r = subprocess.run(args, capture_output=True, text=True)
+    return r.stdout
+
+
+def show(unit, props, user=False):
+    args = ["systemctl"] + (["--user", f"--machine={USER}@"] if user else []) + \
+        ["show", unit, "--no-pager"] + [f"-p{p}" for p in props]
+    out = {}
+    for line in run(*args).splitlines():
+        k, _, v = line.partition("=")
+        out.setdefault(k, []).append(v)
+    return {k: v if len(v) > 1 else v[0] for k, v in out.items()}
+
+
+UNIT = {"us": 1e-6, "ms": 1e-3, "s": 1, "sec": 1, "min": 60, "m": 60, "h": 3600, "d": 86400, "w": 604800,
+        "month": 2629800, "y": 31557600}
+
+
+def span(text):
+    """「1min 13.723s」「12h」「1w」などを秒に"""
+    total = 0.0
+    for num, u in re.findall(r"([\d.]+)\s*(us|ms|min|month|sec|s|m|h|d|w|y)\b", text):
+        total += float(num) * UNIT[u]
+    return total
+
+
+def size(text):
+    m = re.match(r"([\d.]+)([BKMGT]?)", text.strip())
+    if not m:
+        return None
+    return float(m.group(1)) * 1024 ** "BKMGT".index(m.group(2) or "B")
+
+
+def num(v):
+    try:
+        n = int(v)
+        return None if n >= 2**63 else n
+    except (TypeError, ValueError):
+        return None
+
+
+def exec_path(info):
+    m = re.search(r"path=(\S+)", info.get("ExecStart", "") if isinstance(info.get("ExecStart"), str) else "")
+    return m.group(1) if m else ""
+
+
+def owner(name, info):
+    """(user?, 管理元の名前)"""
+    frag = info.get("FragmentPath", "")
+    base = name.rsplit(".", 1)[0]
+    if frag.startswith(("/etc/systemd/system/", "/home/")) or base in EXTRA_USER:
+        path = exec_path(info) + " " + (info.get("WorkingDirectory") or "")
+        m = re.search(rf"/home/{USER}/src/([^/\s]+)", path)
+        if m and m.group(1) != "dotfiles":
+            return True, m.group(1)
+        exe = os.path.basename(exec_path(info))
+        if exe and run("find", DOTFILES, "-name", exe, "-print", "-quit").strip():
+            return True, "dotfiles"
+        if frag.startswith("/usr/lib/"):
+            pkg = run("dpkg", "-S", frag).split(":")[0].strip()
+            return True, pkg or base
+        return True, base
+    return False, "Ubuntu 標準"
+
+
+def last_run(service):
+    """直近の実行の所要時間・CPU・メモリ（journal の Consumed 行、なければ systemctl show）"""
+    line = ""
+    for l in run("journalctl", "-u", service, "--since", "-14d", "-o", "cat", "--no-pager",
+                 "-g", "Consumed").splitlines():
+        line = l
+    res = {}
+    m = re.search(r"Consumed (.+?) CPU time(?: over (.+?) wall clock time)?(?:, ([\d.]+[BKMGT]) memory peak)?", line)
+    if m:
+        res = {"cpu": span(m.group(1)), "dur": span(m.group(2)) if m.group(2) else None,
+               "mem": size(m.group(3)) if m.group(3) else None}
+    info = show(service, ["ExecMainStartTimestampMonotonic", "ExecMainExitTimestampMonotonic",
+                          "CPUUsageNSec", "MemoryPeak"])
+    s, e = num(info.get("ExecMainStartTimestampMonotonic")), num(info.get("ExecMainExitTimestampMonotonic"))
+    if res.get("dur") is None and s and e and e >= s:
+        res["dur"] = (e - s) / 1e6
+    if res.get("cpu") is None and num(info.get("CPUUsageNSec")) is not None:
+        res["cpu"] = num(info["CPUUsageNSec"]) / 1e9
+    if res.get("mem") is None and num(info.get("MemoryPeak")) is not None:
+        res["mem"] = num(info["MemoryPeak"])
+    return res
+
+
+def weight(r):
+    cpu, mem = r.get("cpu"), r.get("mem")
+    if cpu is None and mem is None:
+        return "unknown"
+    cpu, mem = cpu or 0, mem or 0
+    if cpu >= 60 or mem >= 512 * 2**20:
+        return "heavy"
+    if cpu >= 10 or mem >= 128 * 2**20:
+        return "mid"
+    return "light"
+
+
+def calendar(spec, week_start):
+    """OnCalendar の 1 週間分の実行時刻（月曜 00:00 からの分）と間隔（分）"""
+    base = (week_start - timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
+    out = run("systemd-analyze", "calendar", f"--iterations={WEEK_ITER}", f"--base-time={base}", spec)
+    times = []
+    for m in re.finditer(r"(?:Next elapse|Iteration #\d+): \w+ (\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)", out):
+        t = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+        mins = (t - week_start).total_seconds() / 60
+        if mins >= 7 * 1440:
+            break
+        times.append(mins)
+    gap = times[1] - times[0] if len(times) > 1 else None
+    return times, gap
+
+
+def timers(week_start, now):
+    rows = []
+    listing = json.loads(run("systemctl", "list-timers", "--all", "--output=json") or "[]")
+    for user in (False, True):
+        if user:
+            listing = json.loads(run("systemctl", "--user", f"--machine={USER}@", "list-timers", "--all",
+                                     "--output=json") or "[]")
+        for t in listing:
+            name = t["unit"]
+            info = show(name, ["Description", "Unit", "FragmentPath", "TimersCalendar", "TimersMonotonic",
+                               "RandomizedDelayUSec", "Persistent"], user)
+            svc = info.get("Unit", t.get("activates") or "")
+            sinfo = show(svc, ["Description", "FragmentPath", "ExecStart", "WorkingDirectory"], user)
+            mine, group = owner(svc, sinfo)
+            if user and group == "Ubuntu 標準":
+                mine = False
+            rnd = span(info.get("RandomizedDelayUSec", "0"))
+            specs, mono, occ, tick = [], [], [], None
+            cal = info.get("TimersCalendar", [])
+            for c in cal if isinstance(cal, list) else [cal]:
+                m = re.search(r"OnCalendar=(.+?) ;", c)
+                if m:
+                    specs.append(m.group(1))
+                    times, gap = calendar(m.group(1), week_start)
+                    if gap is not None and gap < 60:
+                        tick = gap if tick is None else min(tick, gap)
+                    else:
+                        occ += times
+            mon = info.get("TimersMonotonic", [])
+            nxt = t.get("next") or 0
+            for c in mon if isinstance(mon, list) else [mon]:
+                m = re.search(r"(On\w+?)USec=(\S+) ;", c)
+                if not m:
+                    continue
+                kind, sec = m.group(1), span(m.group(2))
+                mono.append(f"{kind}Sec={m.group(2)}")
+                if kind in ("OnBoot", "OnStartup"):
+                    continue
+                if sec <= 3600:
+                    tick = sec / 60 if tick is None else min(tick, sec / 60)
+                elif nxt:
+                    first = (datetime.fromtimestamp(nxt / 1e6) - week_start).total_seconds() / 60
+                    step = sec / 60
+                    k = first - step * int(first // step)
+                    while k < 7 * 1440:
+                        occ.append(k)
+                        k += step
+            r = last_run(svc) if svc else {}
+            rows.append({
+                "unit": name, "service": svc, "user_manager": user,
+                "desc": sinfo.get("Description") or info.get("Description", ""),
+                "mine": mine, "group": group,
+                "calendar": specs, "monotonic": mono, "random_sec": rnd,
+                "persistent": info.get("Persistent") == "yes",
+                "occ": sorted(round(x, 2) for x in occ), "tick_min": tick,
+                "last": (t.get("last") or 0) / 1e6 or None, "next": nxt / 1e6 or None,
+                "active": bool(nxt or t.get("last")),  # 実行中は next が空になるので前回も見る
+                "dur": r.get("dur"), "cpu": r.get("cpu"), "mem": r.get("mem"), "weight": weight(r),
+            })
+    return rows
+
+
+def ports():
+    """pid ごとの待ち受けアドレス"""
+    by_pid = {}
+    for line in run("ss", "-ltnupH").splitlines():
+        cols = line.split()
+        if len(cols) < 6:
+            continue
+        proto, local = cols[0], cols[4]
+        for pid in re.findall(r"pid=(\d+)", line):
+            by_pid.setdefault(int(pid), set()).add(f"{local}/{proto}")
+    return by_pid
+
+
+def unit_of(pid):
+    try:
+        cg = open(f"/proc/{pid}/cgroup").read()
+    except OSError:
+        return None
+    m = re.findall(r"/([^/\n]+\.service)", cg)
+    return m[-1] if m else None
+
+
+def serve():
+    try:
+        st = json.loads(run("tailscale", "serve", "status", "--json") or "{}")
+    except json.JSONDecodeError:
+        return []
+    out = []
+    for host, web in (st.get("Web") or {}).items():
+        port = host.rsplit(":", 1)[1]
+        scheme = "https" if (st.get("TCP", {}).get(port, {}) or {}).get("HTTPS") else "http"
+        for path, h in (web.get("Handlers") or {}).items():
+            url = f"{scheme}://{host.split(':')[0] if port in ('443', '80') else host}{path}"
+            target = h.get("Proxy") or h.get("Path") or h.get("Text") or ""
+            out.append({"url": url, "target": target, "kind": "proxy" if h.get("Proxy") else "path"})
+    return out
+
+
+def services():
+    listening = {}
+    for pid, addrs in ports().items():
+        u = unit_of(pid)
+        if u:
+            listening.setdefault(u, set()).update(addrs)
+    units = json.loads(run("systemctl", "list-units", "--type=service", "--state=running",
+                           "--output=json") or "[]")
+    rows = []
+    for u in units:
+        name = u["unit"]
+        info = show(name, ["Description", "FragmentPath", "ExecStart", "WorkingDirectory", "MemoryCurrent",
+                           "CPUUsageNSec", "ActiveEnterTimestamp", "TasksCurrent"])
+        mine, group = owner(name, info)
+        since = info.get("ActiveEnterTimestamp", "")
+        try:
+            since_ts = datetime.strptime(" ".join(since.split()[1:3]), "%Y-%m-%d %H:%M:%S").timestamp()
+        except ValueError:
+            since_ts = None
+        rows.append({
+            "unit": name, "desc": info.get("Description", ""), "mine": mine, "group": group,
+            "mem": num(info.get("MemoryCurrent")), "cpu": (num(info.get("CPUUsageNSec")) or 0) / 1e9,
+            "since": since_ts, "tasks": num(info.get("TasksCurrent")),
+            "listen": sorted(listening.get(name, [])),
+        })
+    return rows
+
+
+def main():
+    now = datetime.now()
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    mem_total = 0
+    for line in open("/proc/meminfo"):
+        if line.startswith("MemTotal:"):
+            mem_total = int(line.split()[1]) * 1024
+    data = {
+        "generated": time.time(), "host": os.uname().nodename,
+        "cpus": os.cpu_count(), "mem_total": mem_total,
+        "week_start": week_start.timestamp(),
+        "timers": timers(week_start, now), "services": services(), "serve": serve(),
+    }
+    os.makedirs(OUT, exist_ok=True)
+    tmp = os.path.join(OUT, ".data.json.tmp")
+    with open(tmp, "w") as f:
+        json.dump(data, f, ensure_ascii=False)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, os.path.join(OUT, "data.json"))
+
+
+if __name__ == "__main__":
+    main()

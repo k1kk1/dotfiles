@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>raspi 定期実行</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="app.css">
+</head><body>
+<div class="wrap">
+  <header id="hdr"></header>
+  <section>
+    <div class="sec-head">
+      <h2>毎日</h2>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--c-user)"></i>ユーザー設定</span>
+        <span id="lg-sys"><i class="sw" style="background:var(--c-sys)"></i>システム</span>
+        <span><i class="sw win"></i>範囲内のどこかで 1 回</span>
+        <span><i class="sw tick"></i>数分ごと</span>
+        <span>太さ = 重さ</span>
+      </div>
+    </div>
+    <div class="scroll"><div class="tl" id="tl"></div></div>
+  </section>
+  <section>
+    <h2>曜日指定</h2>
+    <div class="week" id="wk"></div>
+  </section>
+  <section>
+    <h2>一覧</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>タイマー</th><th>管理元</th><th>設定</th><th>前回</th><th>次回</th><th class="r">所要</th><th class="r">CPU</th><th class="r">メモリ</th><th>重さ</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+<script src="common.js"></script>
+<script>
+const W = {heavy:3, mid:2, light:1, unknown:1};
+const pct = m => (m / 1440 * 100).toFixed(3) + "%";
+const short = s => fmtDur(s).replace(/ 0 (分|秒|時間)$/, "");
+
+// 1 週間の実行時刻（月曜 0:00 からの分）を「毎日」と「曜日指定」に分ける
+function classify(t){
+  const byDay = Array.from({length: 7}, () => []);
+  for (const m of t.occ) byDay[Math.min(6, Math.floor(m / 1440))].push(Math.round(m % 1440));
+  if (t.tick_min) return {daily: true, mins: [], byDay};
+  const key = d => d.join(",");
+  const daily = byDay.every(d => d.length) && byDay.every(d => key(d) === key(byDay[0]));
+  return {daily, mins: byDay[0], byDay};
+}
+
+function segs(t, mins){
+  const win = (t.random_sec || 0) / 60, dur = Math.max((t.dur ?? 60) / 60, 1);
+  const out = [];
+  for (const s of mins){
+    const e = s + win + dur, kind = win > 0 ? "win" : "run";
+    if (e <= 1440) out.push([s, e, kind]);
+    else { out.push([s, 1440, kind]); out.push([0, Math.min(e - 1440, 1440), kind]); }
+  }
+  return out;
+}
+
+const when = t => [...t.calendar, ...t.monotonic].join(" · ") + (t.random_sec ? ` · +${short(t.random_sec)} 以内` : "");
+const plus = t => t.random_sec ? ` +${short(t.random_sec)}` : "";
+
+function render(data){
+  header("timers", data);
+  document.getElementById("lg-sys").hidden = !SYS;
+  const rows = data.timers.filter(t => SYS || t.mine);
+  const byUnit = Object.fromEntries(data.timers.map(t => [t.unit, t]));
+  const active = rows.filter(t => t.active).map(t => ({t, c: classify(t)}));
+
+  // 毎日
+  const daily = active.filter(x => x.c.daily);
+  let html = '<div class="axis-lab">時刻</div><div class="axis">';
+  for (let i = 0; i < 24; i += 3) html += `<span style="left:${pct(i * 60)}">${pad(i)}:00</span>`;
+  html += "</div>";
+  const load = new Array(96).fill(0);
+  for (const {t, c} of daily) for (const [s, e, k] of segs(t, c.mins)){
+    for (let b = Math.floor(s / 15); b < Math.ceil(e / 15) && b < 96; b++)
+      load[b] += k === "run" ? W[t.weight] : W[t.weight] * Math.min(1, 30 / (e - s));
+  }
+  const max = Math.max(1, ...load);
+  html += '<div class="lab"><span class="n">混み具合</span><span class="s">15 分ごと</span></div><div class="track"><div class="heat">';
+  load.forEach((v, b) => {
+    const a = v === 0 ? 0 : Math.round(12 + 88 * v / max);
+    html += `<div style="background:color-mix(in srgb,var(--accent) ${a}%,var(--line))" title="${hm(b * 15)} ${v.toFixed(1)}"></div>`;
+  });
+  html += "</div></div>";
+  daily.sort((a, b) => (b.t.mine - a.t.mine) || ((a.c.mins[0] ?? -1) - (b.c.mins[0] ?? -1)));
+  for (const {t, c} of daily){
+    const sub = t.tick_min ? `${t.tick_min} 分ごと` : c.mins.length > 4 ? `1 日 ${c.mins.length} 回` : c.mins.map(hm).join(" · ");
+    html += `<div class="lab"><span class="n"><i class="dot" style="background:${color(t)}"></i>${esc(t.unit.replace(/\.timer$/, ""))}</span><span class="s">${esc(sub + plus(t))}</span></div><div class="track">`;
+    const list = t.tick_min ? [[0, 1440, "tick"]] : segs(t, c.mins);
+    for (const [s, e, k] of list){
+      const style = `--c:${color(t)};left:${pct(s)};width:${pct(e - s)}` + (k === "tick" ? `;--gap:calc(100% / ${1440 / t.tick_min})` : "");
+      html += `<div class="b ${k} w-${t.weight}" style="${style}" tabindex="0" data-k="${esc(t.unit)}"></div>`;
+    }
+    html += "</div>";
+  }
+  if (!daily.length) html += '<div class="empty" style="grid-column:1/-1">なし</div>';
+  const tl = document.getElementById("tl"); tl.innerHTML = html;
+  const now = new Date(), nm = now.getHours() * 60 + now.getMinutes();
+  tl.querySelectorAll(".track").forEach((tr, i) => {
+    tr.insertAdjacentHTML("beforeend", `<div class="now" style="left:${pct(nm)}"></div>` + (i === 0 ? `<div class="now-cap" style="left:${pct(nm)}">${hm(nm)}</div>` : ""));
+  });
+
+  // 曜日指定
+  const names = ["月","火","水","木","金","土","日"], today = (now.getDay() + 6) % 7;
+  const weekly = active.filter(x => !x.c.daily);
+  document.getElementById("wk").innerHTML = names.map((dn, d) => {
+    const evs = [];
+    for (const {t, c} of weekly) for (const m of c.byDay[d]) evs.push({t, m});
+    evs.sort((a, b) => a.m - b.m);
+    const body = evs.map(({t, m}) => `<div class="ev" style="--c:${color(t)}" tabindex="0" data-k="${esc(t.unit)}"><span class="t">${hm(m)}${esc(plus(t))}</span><span>${esc(t.unit.replace(/\.timer$/, ""))}</span><span class="wt ${t.weight}">${WT[t.weight]}</span></div>`).join("");
+    return `<div class="day${d === today ? " today" : ""}"><h3>${dn}<small>${d === today ? "今日" : ""}</small></h3>${body}</div>`;
+  }).join("");
+
+  // 一覧
+  const sorted = [...rows].sort((a, b) => (b.active - a.active) || (b.mine - a.mine) || ((a.next || 9e12) - (b.next || 9e12)));
+  document.getElementById("tb").innerHTML = sorted.map(t => `<tr class="${t.active ? "" : "off"}">
+    <td><div class="n">${esc(t.unit)}</div><div class="d">${esc(t.desc)}</div></td>
+    <td><span class="own"><i class="dot" style="background:${color(t)}"></i>${esc(t.group)}</span></td>
+    <td class="cfg">${esc(when(t))}${t.persistent ? "<br>Persistent" : ""}</td>
+    <td class="num">${fmtTime(t.last)}</td>
+    <td class="num">${t.active ? fmtTime(t.next) : "動かない"}</td>
+    <td class="num r">${fmtDur(t.dur)}</td><td class="num r">${fmtDur(t.cpu)}</td><td class="num r">${fmtBytes(t.mem)}</td>
+    <td><span class="wt ${t.weight}">${WT[t.weight]}</span></td></tr>`).join("") || '<tr><td colspan="9" class="empty">なし</td></tr>';
+
+  tooltip(k => { const t = byUnit[k]; return t && `<b>${esc(t.unit)}</b>${esc(t.desc)}<br><span class="k">設定</span> ${esc(when(t))}<br><span class="k">前回</span> ${fmtDur(t.dur)} · CPU ${fmtDur(t.cpu)} · ${fmtBytes(t.mem)} · ${WT[t.weight]}`; });
+}
+boot(render);
+setInterval(() => location.reload(), 5 * 60 * 1000);
+</script>
+</body></html>

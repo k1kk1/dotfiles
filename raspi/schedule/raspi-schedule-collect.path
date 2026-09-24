@@ -1,0 +1,10 @@
+# raspi: ユニットを追加・削除したらすぐにページのデータを更新する
+[Unit]
+Description=Refresh raspi schedule page when unit files change
+
+[Path]
+PathChanged=/etc/systemd/system
+Unit=raspi-schedule-collect.service
+
+[Install]
+WantedBy=paths.target

@@ -1,0 +1,10 @@
+# raspi: 定期実行・常駐ページのデータを 10 分ごとに更新する
+[Unit]
+Description=Refresh raspi schedule page every 10 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target

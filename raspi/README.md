@@ -22,6 +22,7 @@ Raspberry Pi 5（Ubuntu 26.04 / arm64、ホスト名 `raspi`）用の dotfiles�
 | `raspi/bin/raspi-notify` → `/usr/local/bin` | Discord への通知。Webhook の URL は `~/.config/raspi-notify/discord-webhook`（リポジトリ外） |
 | `raspi/alert/` → `/usr/local/sbin`・systemd | 5 分ごとに異常を確認し、変化があったときだけ通知（`raspi-alert`） |
 | `raspi/report/` → `/usr/local/bin`・systemd | 毎朝 8 時に過去 24 時間の CPU・メモリ・温度・ディスクのグラフを送る（`raspi-daily-report`） |
+| `raspi/schedule/` → `/usr/local/sbin`・`/var/lib/raspi-schedule`・systemd | 定期実行・常駐サービスのページ。10 分ごととユニット追加時に `data.json` を作り、tailscale serve の `/schedule/` で公開 |
 | `raspi/bin/raspi-hc` → `/usr/local/bin` | Healthchecks.io への連絡（死活監視とバックアップの見張り）。ping key は `~/.config/raspi-notify/healthchecks-ping-key`（リポジトリ外） |
 | `raspi/claude/CLAUDE.md` → `~/.claude/` | Claude Code への Pi の前提と進め方 |
 | `raspi/claude/settings.json` | 許可・確認・禁止するコマンドと通知の hooks。`~/.claude/settings.json` に足し込む（リンクしない） |

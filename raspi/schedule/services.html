@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>raspi 常駐</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="app.css">
+</head><body>
+<div class="wrap">
+  <header id="hdr"></header>
+  <div class="tiles" id="tiles"></div>
+  <section>
+    <h2>サービス</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>サービス</th><th>管理元</th><th class="r">メモリ</th><th class="r">CPU 累計</th><th>稼働</th><th>待ち受け</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+  </section>
+  <section>
+    <h2>tailnet への公開</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>URL</th><th>転送先</th><th>サービス</th></tr></thead>
+      <tbody id="sv"></tbody>
+    </table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+<script src="common.js"></script>
+<script>
+const scope = l => /^(127\.|\[::1\])/.test(l) ? "localhost" : /^(0\.0\.0\.0|\[::\]|\*)/.test(l) ? "all"
+  : /^(100\.|\[fd7a)/.test(l) ? "tailnet" : "LAN";
+const portOf = s => (String(s).match(/:(\d+)(?:\/\w+)?$/) || [])[1];
+
+function render(data){
+  header("services", data);
+  const rows = data.services.filter(s => SYS || s.mine).sort((a, b) => (b.mem || 0) - (a.mem || 0));
+  const sum = list => list.reduce((a, s) => a + (s.mem || 0), 0);
+  const total = data.mem_total, shown = sum(rows), all = sum(data.services);
+
+  // 待ち受けポート → サービス（公開先の対応付けに使う）
+  const byPort = {};
+  for (const s of data.services) for (const l of s.listen)
+    if (/^(127\.0\.0\.1|0\.0\.0\.0|\[::\]|\[::1\]):\d+\/tcp$/.test(l)) byPort[portOf(l)] = s.unit;
+  const published = new Set(data.serve.map(v => portOf(v.target)).filter(Boolean));
+
+  document.getElementById("tiles").innerHTML = [
+    ["表示中のメモリ", fmtBytes(shown), `/ ${fmtBytes(total)}`],
+    ["サービス全体", fmtBytes(all), `${Math.round(all / total * 100)}%`],
+    ["サービス数", rows.length, `/ ${data.services.length}`],
+    ["CPU", data.cpus, "コア"],
+  ].map(([k, v, s]) => `<div class="tile"><span class="k">${k}</span><span class="v">${v} <small>${s}</small></span></div>`).join("");
+
+  const maxMem = Math.max(1, ...rows.map(s => s.mem || 0));
+  const now = Date.now() / 1000;
+  document.getElementById("tb").innerHTML = rows.map(s => {
+    // アドレスは種類にまとめる。tailnet の一時ポート（公開していないもの）は省く
+    const ports = [...new Set(s.listen.map(l => `${scope(l)}:${l.split(":").pop()}`))]
+      .filter(p => !(p.startsWith("tailnet:") && !published.has(portOf(p)) && !/^tailnet:(443|80)\//.test(p)));
+    return `<tr>
+    <td><div class="n">${esc(s.unit.replace(/\.service$/, ""))}</div><div class="d">${esc(s.desc)}</div></td>
+    <td><span class="own"><i class="dot" style="background:${color(s)}"></i>${esc(s.group)}</span></td>
+    <td class="num r">${fmtBytes(s.mem)}<div class="meter"><i style="width:${((s.mem || 0) / maxMem * 100).toFixed(1)}%"></i></div></td>
+    <td class="num r">${fmtDur(s.cpu)}</td>
+    <td class="num">${s.since ? fmtDur(now - s.since) : "—"}</td>
+    <td><div class="ports">${ports.map(p => `<span class="${p.startsWith("localhost:") && published.has(portOf(p)) ? "pub" : ""}">${esc(p)}</span>`).join("")}</div></td></tr>`;
+  }).join("") || '<tr><td colspan="6" class="empty">なし</td></tr>';
+
+  document.getElementById("sv").innerHTML = data.serve.map(v => `<tr>
+    <td class="num"><a href="${esc(v.url)}">${esc(v.url)}</a></td>
+    <td class="num">${esc(v.target)}</td>
+    <td class="num">${esc(v.kind === "path" ? "ファイル" : (byPort[portOf(v.target)] || "—").replace(/\.service$/, ""))}</td></tr>`).join("")
+    || '<tr><td colspan="3" class="empty">なし</td></tr>';
+}
+boot(render);
+setInterval(() => location.reload(), 5 * 60 * 1000);
+</script>
+</body></html>

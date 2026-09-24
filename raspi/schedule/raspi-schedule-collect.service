@@ -1,0 +1,9 @@
+# raspi: タイマーと常駐サービスを調べて /var/lib/raspi-schedule/data.json を作る
+# （raspi-schedule-collect.timer・.path から起動。ページは tailscale serve の /schedule/）
+[Unit]
+Description=Collect raspi timers and services for the schedule page
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/raspi-schedule-collect /var/lib/raspi-schedule
+Nice=19

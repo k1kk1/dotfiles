@@ -200,7 +200,44 @@ if [[ -d "$HERDR_PLUGINS_DIR" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 7. 動作確認
+# 7. ログイン時の表示
+# ------------------------------------------------------------------------------
+#
+# Ubuntu 標準の案内（リンク・宣伝・IP アドレスなど約 35 行）を止め、
+# raspi/motd/05-raspi（鍵の期限・稼働時間・問題があるときの警告）に置き換える。
+# 標準のスクリプトは dpkg-statoverride で実行権を外すので、パッケージ更新後も止まったまま。
+# 問題があるときだけ表示するもの（電源の警告・overlayroot・fsck）は残す。
+
+_head "ログイン時の表示"
+
+sudo install -m 755 "$RASPI_DIR/motd/05-raspi" /etc/update-motd.d/05-raspi
+_ok "/etc/update-motd.d/05-raspi"
+
+MOTD_DISABLE=(
+  /etc/update-motd.d/00-header /etc/update-motd.d/10-help-text /etc/update-motd.d/50-motd-news
+  /etc/update-motd.d/85-fwupd /etc/update-motd.d/90-piboot-try /etc/update-motd.d/90-updates-available
+  /etc/update-motd.d/91-contract-ua-esm-status /etc/update-motd.d/91-release-upgrade
+  /etc/update-motd.d/92-unattended-upgrades /etc/update-motd.d/95-hwe-eol
+  /etc/update-motd.d/98-reboot-required /usr/share/landscape/landscape-sysinfo.wrapper
+)
+for f in "${MOTD_DISABLE[@]}"; do
+  [[ -e $f ]] || continue
+  if sudo dpkg-statoverride --list "$f" &>/dev/null; then
+    _skip "${f##*/} (already disabled)"
+  else
+    sudo dpkg-statoverride --update --add root root 0644 "$f" && _ok "${f##*/} を停止"
+  fi
+done
+
+if [[ -f /etc/ssh/sshd_config.d/raspi.conf ]]; then
+  _skip "sshd: Last login の表示 (already disabled)"
+else
+  echo "PrintLastLog no" | sudo tee /etc/ssh/sshd_config.d/raspi.conf >/dev/null
+  sudo systemctl reload ssh && _ok "sshd: Last login の表示を停止"
+fi
+
+# ------------------------------------------------------------------------------
+# 8. 動作確認
 # ------------------------------------------------------------------------------
 
 _head "動作確認"

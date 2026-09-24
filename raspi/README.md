@@ -17,6 +17,7 @@ Raspberry Pi 5（Ubuntu 26.04 / arm64、ホスト名 `raspi`）用の dotfiles�
 | `raspi/bin/prompt-sysinfo` → `~/.local/bin/` | starship 用に CPU・メモリ・温度を出す |
 | `raspi/lazygit/config.yml` → `~/.config/lazygit/` | lazygit の配色 |
 | `raspi/btop/raspi.theme` → `~/.config/btop/themes/` | btop の配色（`btop.conf` は btop が書き換えるので管理しない） |
+| `raspi/motd/05-raspi` → `/etc/update-motd.d/` | ログイン時の表示（OS・稼働時間・Tailscale の鍵の期限・実行中の Agent と、問題があるときだけ警告）。Ubuntu 標準の案内は `install.sh` が停止する |
 
 ## セットアップ
 

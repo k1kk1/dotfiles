@@ -1,0 +1,88 @@
+#!/bin/bash
+# raspi: ログイン時に表示する情報
+#
+# dotfiles の raspi ブランチ（raspi/motd/05-raspi）から raspi/install.sh が
+# /etc/update-motd.d/ に配置する。ログインのたびに root で実行される。
+#
+# 普段は 2〜3 行だけ。問題があるときだけ「!」の行を足す。
+# CPU・メモリ・温度はプロンプトに出ているので、ここでは出さない。
+
+LIME=$'\e[1;38;2;182;255;59m'
+TEXT=$'\e[38;2;200;247;160m'
+DIM=$'\e[38;2;107;143;58m'
+WARN=$'\e[38;2;255;210;59m'
+ERR=$'\e[38;2;255;59;107m'
+R=$'\e[0m'
+
+row()  { printf '  %s%-6s%s  %s\n' "$LIME" "$1" "$R" "$2"; }
+warn() { printf '  %s! %s%s\n' "$WARN" "$1" "$R"; }
+err()  { printf '  %s! %s%s\n' "$ERR" "$1" "$R"; }
+
+echo
+
+# --- OS と稼働時間（予期しない再起動に気付くため）---
+. /etc/os-release
+up=$(awk '{d = int($1 / 86400); h = int($1 % 86400 / 3600); m = int($1 % 3600 / 60)
+           if (d) printf "%d日 %d時間", d, h; else if (h) printf "%d時間 %d分", h, m; else printf "%d分", m}' /proc/uptime)
+row raspi "${TEXT}${PRETTY_NAME}${R} ${DIM}· 稼働 ${up}${R}"
+
+# --- Tailscale の鍵の有効期限 ---
+# 期限が切れると外から入れなくなる。更新は自宅の LAN から行う（README 参照）
+if ts=$(tailscale status --json 2>/dev/null); then
+  exp=$(jq -r '.Self.KeyExpiry // empty' <<<"$ts")
+  if [[ -n $exp ]]; then
+    days=$(( ($(date -d "$exp" +%s) - $(date +%s)) / 86400 ))
+    ymd=$(date -d "$exp" +%Y-%m-%d)
+    if   (( days < 0 ));  then row 鍵期限 "${ERR}${ymd} に期限切れ${R}"
+    elif (( days < 7 ));  then row 鍵期限 "${ERR}${ymd}（あと ${days} 日）${R}"
+    elif (( days < 30 )); then row 鍵期限 "${WARN}${ymd}（あと ${days} 日）${R}"
+    else                       row 鍵期限 "${TEXT}${ymd}${R}${DIM}（あと ${days} 日）${R}"
+    fi
+    (( days < 30 )) && warn "自宅の LAN から ssh kikki@192.168.51.54 → sudo tailscale up --force-reauth で更新"
+  fi
+  [[ $(jq -r '.Self.Online' <<<"$ts") == true ]] || err "Tailscale がオフラインです"
+else
+  err "Tailscale の状態を取得できません"
+fi
+
+# --- 実行中の Agent（herdr に戻れば続きを見られる）---
+agents=()
+pgrep -f '^([^ ]*/)?claude( |$)' >/dev/null && agents+=(claude)
+pgrep -f '^([^ ]*/)?codex( |$)|^node [^ ]*/codex( |$)' >/dev/null && agents+=(codex)
+if ((${#agents[@]})); then
+  list=$(printf '%s、' "${agents[@]}")
+  row Agent "${TEXT}${list%、} が実行中${R} ${DIM}→ herdr で再接続${R}"
+fi
+
+# --- ここから下は問題があるときだけ表示する ---
+
+# 起動ディスク（NVMe が起動できないと microSD の古い予備環境が起動する）
+root=$(findmnt -n -o SOURCE /)
+[[ $root == /dev/nvme* ]] || err "NVMe ではなく ${root} から起動しています（microSD の予備環境。中身が古い）"
+
+# 再起動待ちの更新
+if [[ -f /run/reboot-required ]]; then
+  pkgs=$(sort -u /run/reboot-required.pkgs 2>/dev/null | head -3 | paste -sd"、" -)
+  warn "再起動待ちの更新があります${pkgs:+（${pkgs}）}。帰宅後に sudo reboot"
+fi
+
+# 異常終了しているサービス
+failed=$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | awk '{print $1}' | paste -sd' ' -)
+[[ -n $failed ]] && err "停止しているサービス: ${failed}"
+
+# ディスク使用率
+use=$(df --output=pcent / | tail -1 | tr -dc 0-9)
+(( use >= 80 )) && warn "ディスク使用率 ${use}%"
+
+# 電源電圧と温度による速度制限（vcgencmd get_throttled のビット）
+if t=$(vcgencmd get_throttled 2>/dev/null); then
+  v=$(( ${t#*=} ))
+  if   (( v & 0x1 ));     then err  "電源電圧が低下しています"
+  elif (( v & 0x10000 )); then warn "起動後に電源電圧の低下がありました"
+  fi
+  if   (( v & 0x4 ));     then err  "温度または電源のため速度を落としています"
+  elif (( v & 0x40000 )); then warn "起動後に速度制限がかかったことがあります"
+  fi
+fi
+
+echo

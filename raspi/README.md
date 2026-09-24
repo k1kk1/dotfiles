@@ -16,6 +16,7 @@ Raspberry Pi 5（Ubuntu 26.04 / arm64、ホスト名 `raspi`）用の dotfiles�
 | `raspi/zsh/fzf.zsh` → `~/.fzf.zsh` | apt 版 fzf のキーバインドと補完 |
 | `raspi/bin/prompt-sysinfo` → `~/.local/bin/` | starship 用に CPU・メモリ・温度を出す |
 | `raspi/lazygit/config.yml` → `~/.config/lazygit/` | lazygit の配色 |
+| `raspi/btop/raspi.theme` → `~/.config/btop/themes/` | btop の配色（`btop.conf` は btop が書き換えるので管理しない） |
 
 ## セットアップ
 

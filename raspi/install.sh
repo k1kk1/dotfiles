@@ -237,7 +237,73 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 8. 動作確認
+# 8. microSD の予備環境の更新（週 1 回）
+# ------------------------------------------------------------------------------
+#
+# NVMe の中身を microSD に複製して、NVMe が起動できないときの予備環境を直近の状態に保つ。
+
+_head "microSD の予備環境の更新"
+
+sudo install -m 755 "$RASPI_DIR/backup/raspi-sd-sync" /usr/local/sbin/raspi-sd-sync
+sudo install -m 644 "$RASPI_DIR/backup/raspi-sd-sync.service" /etc/systemd/system/raspi-sd-sync.service
+sudo install -m 644 "$RASPI_DIR/backup/raspi-sd-sync.timer" /etc/systemd/system/raspi-sd-sync.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now -q raspi-sd-sync.timer
+_ok "raspi-sd-sync.timer（次回: $(systemctl show raspi-sd-sync.timer -p NextElapseUSecRealtime --value)）"
+
+# ------------------------------------------------------------------------------
+# 9. 通知（Discord）と Claude Code / Codex の設定
+# ------------------------------------------------------------------------------
+#
+# 通知は Discord の Webhook に送る。URL は秘密情報なのでリポジトリに入れず、
+# ~/.config/raspi-notify/discord-webhook に 1 行で書く（無いあいだは journal に記録するだけ）。
+
+_head "通知と Agent の設定"
+
+sudo install -m 755 "$RASPI_DIR/bin/raspi-notify" /usr/local/bin/raspi-notify
+sudo install -m 755 "$RASPI_DIR/alert/raspi-alert" /usr/local/sbin/raspi-alert
+sudo install -m 644 "$RASPI_DIR/alert/raspi-alert.service" /etc/systemd/system/raspi-alert.service
+sudo install -m 644 "$RASPI_DIR/alert/raspi-alert.timer" /etc/systemd/system/raspi-alert.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now -q raspi-alert.timer
+_ok "raspi-notify / raspi-alert.timer（5 分ごと）"
+
+mkdir -p "$CONFIG_DIR/raspi-notify" && chmod 700 "$CONFIG_DIR/raspi-notify"
+if [[ -s "$CONFIG_DIR/raspi-notify/discord-webhook" ]]; then
+  chmod 600 "$CONFIG_DIR/raspi-notify/discord-webhook"
+  _skip "Discord の Webhook (already configured)"
+else
+  _skip "Discord の Webhook が未設定（~/.config/raspi-notify/discord-webhook に URL を書くと送信される）"
+fi
+
+# Claude Code: 指示書はリンク。settings.json は Claude Code も書き換えるので、必要な部分だけ足し込む
+_symlink "$RASPI_DIR/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+settings="$HOME/.claude/settings.json"
+[[ -f $settings ]] || echo '{}' > "$settings"
+merged="$settings.tmp.$$"
+jq -s -f "$RASPI_DIR/claude/merge-settings.jq" "$settings" "$RASPI_DIR/claude/settings.json" > "$merged"
+if cmp -s "$settings" "$merged"; then
+  rm -f "$merged"
+  _skip "~/.claude/settings.json (already merged)"
+else
+  cp "$settings" "$settings.backup.$(date +%Y%m%d%H%M%S)"
+  mv "$merged" "$settings"
+  _ok "~/.claude/settings.json に権限と通知の hooks を追加"
+fi
+
+# Codex: notify はトップレベルの項目なので、ファイルの先頭に入れる
+codex_cfg="$HOME/.codex/config.toml"
+mkdir -p "$HOME/.codex"; touch "$codex_cfg"
+if grep -q '^notify' "$codex_cfg"; then
+  _skip "~/.codex/config.toml の notify (already set)"
+else
+  { printf 'notify = ["%s"]\n\n' "$RASPI_DIR/bin/codex-notify"; cat "$codex_cfg"; } > "$codex_cfg.tmp.$$"
+  mv "$codex_cfg.tmp.$$" "$codex_cfg"
+  _ok "~/.codex/config.toml に完了通知を追加"
+fi
+
+# ------------------------------------------------------------------------------
+# 10. 動作確認
 # ------------------------------------------------------------------------------
 
 _head "動作確認"

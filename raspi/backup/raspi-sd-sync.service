@@ -1,0 +1,12 @@
+# raspi: NVMe の中身を microSD の予備環境に複製する（raspi-sd-sync.timer から起動）
+[Unit]
+Description=Sync NVMe to the microSD fallback system
+ConditionPathExists=/dev/disk/by-label/writable
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/raspi-sd-sync
+Nice=19
+IOSchedulingClass=idle
+# 読み込んだファイルのキャッシュで他のアプリのキャッシュを追い出さないよう、この処理のメモリを制限する
+MemoryHigh=512M

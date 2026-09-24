@@ -1,0 +1,13 @@
+#!/bin/bash
+# Codex の notify から呼ばれ、作業の完了を raspi-notify で知らせる。
+# 引数は JSON（type が agent-turn-complete のときに通知する）。
+# Claude Code などから非対話で実行された codex exec の完了は通知しない。
+
+payload=${1:-}
+[[ $(jq -r '.type // empty' <<<"$payload") == agent-turn-complete ]] || exit 0
+# 呼び出し元の codex が `codex exec` で起動されていれば通知しない
+[[ " $(ps -o args= -p "$PPID" 2>/dev/null) " == *" exec "* ]] && exit 0
+
+project=$(basename "$(jq -r '.cwd // empty' <<<"$payload")")
+raspi-notify info "codex: 完了（${project:-不明}）" "作業が終わりました"
+exit 0

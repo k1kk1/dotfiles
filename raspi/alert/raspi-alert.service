@@ -1,0 +1,8 @@
+# raspi: Pi の異常を確認して Discord に通知する（raspi-alert.timer から起動）
+[Unit]
+Description=Check raspi health and notify on changes
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/raspi-alert
+Nice=19

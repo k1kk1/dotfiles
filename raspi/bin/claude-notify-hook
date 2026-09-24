@@ -1,0 +1,51 @@
+#!/bin/bash
+# Claude Code の hooks から呼ばれ、完了と入力待ちを raspi-notify で知らせる。
+#
+#   prompt       … 指示を受け取った時刻を記録する（UserPromptSubmit）
+#   stop         … 応答が終わったとき。指示から 2 分以上かかった作業だけ通知する（Stop）
+#   notification … 確認や入力を待っているとき。1 分たっても進んでいなければ通知する（Notification）
+#
+# 手元で操作している間の短いやり取りでは通知しない。
+
+event=${1:-}
+input=$(cat)
+state="${XDG_CACHE_HOME:-$HOME/.cache}/claude-notify"
+mkdir -p "$state"
+
+session=$(jq -r '.session_id // "unknown"' <<<"$input")
+project=$(basename "$(jq -r '.cwd // empty' <<<"$input")")
+project=${project:-不明}
+
+case $event in
+  prompt)
+    date +%s > "$state/$session"
+    ;;
+
+  stop)
+    [[ -f $state/$session ]] || exit 0
+    elapsed=$(( $(date +%s) - $(cat "$state/$session") ))
+    rm -f "$state/$session"
+    (( elapsed >= 120 )) || exit 0
+    raspi-notify info "claude: 完了（$project）" "$(( elapsed / 60 )) 分かかった作業が終わりました"
+    ;;
+
+  notification)
+    message=$(jq -r '.message // "入力を待っています"' <<<"$input")
+    transcript=$(jq -r '.transcript_path // empty' <<<"$input")
+    type=$(jq -r '.notification_type // empty' <<<"$input")
+    if [[ $type == idle_prompt || $message == *"waiting for your input"* ]]; then
+      # すでに 60 秒以上待っている通知なので、すぐ送る
+      raspi-notify warn "claude: 入力待ち（$project）" "$message"
+    else
+      # 確認の要求は、1 分たっても会話が進んでいないときだけ送る（手元で答えた場合は送らない）
+      (
+        before=$(stat -c %Y "$transcript" 2>/dev/null || echo 0)
+        sleep 60
+        after=$(stat -c %Y "$transcript" 2>/dev/null || echo 0)
+        [[ $before == "$after" ]] && raspi-notify warn "claude: 確認待ち（$project）" "$message"
+      ) </dev/null >/dev/null 2>&1 &
+      disown
+    fi
+    ;;
+esac
+exit 0

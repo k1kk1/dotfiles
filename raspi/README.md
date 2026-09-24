@@ -18,6 +18,12 @@ Raspberry Pi 5（Ubuntu 26.04 / arm64、ホスト名 `raspi`）用の dotfiles�
 | `raspi/lazygit/config.yml` → `~/.config/lazygit/` | lazygit の配色 |
 | `raspi/btop/raspi.theme` → `~/.config/btop/themes/` | btop の配色（`btop.conf` は btop が書き換えるので管理しない） |
 | `raspi/motd/05-raspi` → `/etc/update-motd.d/` | ログイン時の表示（OS・稼働時間・Tailscale の鍵の期限・実行中の Agent と、問題があるときだけ警告）。Ubuntu 標準の案内は `install.sh` が停止する |
+| `raspi/backup/` → `/usr/local/sbin`・systemd | 週 1 回（日曜 4 時）NVMe を microSD の予備環境に複製（`raspi-sd-sync`） |
+| `raspi/bin/raspi-notify` → `/usr/local/bin` | Discord への通知。Webhook の URL は `~/.config/raspi-notify/discord-webhook`（リポジトリ外） |
+| `raspi/alert/` → `/usr/local/sbin`・systemd | 5 分ごとに異常を確認し、変化があったときだけ通知（`raspi-alert`） |
+| `raspi/claude/CLAUDE.md` → `~/.claude/` | Claude Code への Pi の前提と進め方 |
+| `raspi/claude/settings.json` | 許可・確認・禁止するコマンドと通知の hooks。`~/.claude/settings.json` に足し込む（リンクしない） |
+| `raspi/bin/claude-notify-hook`・`codex-notify` | Claude Code・Codex の完了と入力待ちの通知 |
 
 ## セットアップ
 

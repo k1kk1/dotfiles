@@ -56,9 +56,22 @@ fi
 
 # --- ここから下は問題があるときだけ表示する ---
 
-# 起動ディスク（NVMe が起動できないと microSD の古い予備環境が起動する）
+# 起動ディスク（NVMe が起動できないと microSD の予備環境が起動する）と、予備環境の更新状況
 root=$(findmnt -n -o SOURCE /)
-[[ $root == /dev/nvme* ]] || err "NVMe ではなく ${root} から起動しています（microSD の予備環境。中身が古い）"
+if [[ $root != /dev/nvme* ]]; then
+  at=$(cat /etc/raspi-backup-info 2>/dev/null || echo "不明")
+  err "NVMe ではなく ${root} から起動しています（microSD の予備環境、${at} 時点の中身）"
+elif [[ -f /var/lib/raspi-sd-sync/last-result ]]; then
+  read -r result _ reason < /var/lib/raspi-sd-sync/last-result
+  last=$(cat /var/lib/raspi-sd-sync/last-success 2>/dev/null || echo 0)
+  if [[ $result == fail ]]; then
+    warn "microSD へのバックアップに失敗: ${reason}"
+  elif (( $(date +%s) - last > 8 * 86400 )); then
+    warn "microSD の予備環境が $(( ($(date +%s) - last) / 86400 )) 日更新されていません"
+  fi
+else
+  warn "microSD の予備環境がまだ作られていません（sudo systemctl start raspi-sd-sync）"
+fi
 
 # 再起動待ちの更新
 if [[ -f /run/reboot-required ]]; then

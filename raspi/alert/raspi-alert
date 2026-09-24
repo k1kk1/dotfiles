@@ -1,0 +1,98 @@
+#!/bin/bash
+# raspi-alert: Pi の異常を確認し、変化があったときだけ raspi-notify で知らせる
+#
+# dotfiles の raspi ブランチ（raspi/alert/）から install.sh が /usr/local/sbin に配置し、
+# raspi-alert.timer が 5 分ごとに root で実行する。
+#
+# 異常になったときに通知し、続いている間は一定の間隔で再通知し、直ったら「復旧」を通知する。
+# 状態は /var/lib/raspi-alert/<キー> に「最後に通知した時刻 タイトル」で持つ。
+set -uo pipefail
+
+STATE=/var/lib/raspi-alert
+BOOT_ID_FILE=/var/lib/raspi-alert.boot-id
+H6=21600 D1=86400
+now=$(date +%s)
+declare -A seen=()
+mkdir -p "$STATE"
+
+# alert <キー> <warn|high> <再通知の間隔(秒)> <タイトル> [本文]
+alert() {
+  local key=$1 level=$2 every=$3 title=$4 body=${5:-} last=0
+  seen[$key]=1
+  [[ -f $STATE/$key ]] && read -r last _ < "$STATE/$key"
+  if (( now - last >= every )); then
+    raspi-notify "$level" "$title" "$body"
+    echo "$now $title" > "$STATE/$key"
+  fi
+}
+# 警告から異常に上がったとき、警告側を「復旧」扱いにしないための印
+keep() { seen[$1]=1; }
+
+# --- 起動（停電などによる予期しない再起動に気付くため）---
+boot_id=$(cat /proc/sys/kernel/random/boot_id)
+if [[ $(cat "$BOOT_ID_FILE" 2>/dev/null) != "$boot_id" ]]; then
+  echo "$boot_id" > "$BOOT_ID_FILE"
+  raspi-notify info "raspi が起動しました" "herdr の中で動いていた Agent は止まっています"
+fi
+
+# --- 温度 ---
+temp=$(( $(cat /sys/class/thermal/thermal_zone0/temp) / 1000 ))
+if   (( temp >= 78 )); then alert temp-high high $H6 "温度が高い: ${temp}°C" "80°C 前後で速度が落ちます"; keep temp-warn
+elif (( temp >= 70 )); then alert temp-warn warn $H6 "温度が上がっています: ${temp}°C"
+fi
+
+# --- 電源電圧と速度制限（今起きているもの）---
+if t=$(vcgencmd get_throttled 2>/dev/null); then
+  v=$(( ${t#*=} ))
+  (( v & 0x1 )) && alert undervoltage high $H6 "電源電圧が低下しています" "電源アダプタやケーブルを確認してください"
+  (( v & 0x4 )) && alert throttled high $H6 "速度制限がかかっています" "温度または電源が原因です（${t#*=}）"
+fi
+
+# --- ディスク ---
+use=$(df --output=pcent / | tail -1 | tr -dc 0-9)
+if   (( use >= 95 )); then alert disk-high high $H6 "ディスクがほぼ一杯: ${use}%"; keep disk-warn
+elif (( use >= 85 )); then alert disk-warn warn $H6 "ディスク使用率 ${use}%"
+fi
+
+# --- メモリ（残りが少ないときは一番使っているものも添える）---
+avail=$(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{printf "%d", a*100/t}' /proc/meminfo)
+if (( avail < 10 )); then
+  top=$(ps -eo rss=,comm= --sort=-rss | head -n1 | awk '{printf "%s（%.1fGB）", $2, $1/1048576}')
+  alert memory warn $H6 "メモリの残りが少ない: ${avail}%" "一番使っているもの: $top"
+fi
+
+# --- 異常終了したサービス ---
+failed=$(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | awk '{print $1}' | paste -sd' ' -)
+[[ -n $failed ]] && alert failed-units high $H6 "停止したサービスがあります" "$failed"
+
+# --- Tailscale ---
+if ts=$(tailscale status --json 2>/dev/null); then
+  [[ $(jq -r '.BackendState' <<<"$ts") == Running ]] ||
+    alert tailscale high $H6 "Tailscale が動いていません" "外から接続できない状態です"
+  exp=$(jq -r '.Self.KeyExpiry // empty' <<<"$ts")
+  if [[ -n $exp ]]; then
+    days=$(( ($(date -d "$exp" +%s) - now) / 86400 ))
+    msg="自宅の LAN から ssh kikki@192.168.51.54 → sudo tailscale up --force-reauth で更新"
+    if   (( days < 7 ));  then alert key-high high $D1 "Tailscale の鍵の期限まで あと ${days} 日" "$msg"; keep key-warn
+    elif (( days < 30 )); then alert key-warn warn $D1 "Tailscale の鍵の期限まで あと ${days} 日" "$msg"
+    fi
+  fi
+else
+  alert tailscale high $H6 "Tailscale の状態を取得できません"
+fi
+
+# --- microSD の予備環境（失敗は raspi-sd-sync が直接通知する。ここでは古さだけ）---
+if [[ -f /var/lib/raspi-sd-sync/last-success ]]; then
+  age=$(( (now - $(cat /var/lib/raspi-sd-sync/last-success)) / 86400 ))
+  (( age > 8 )) && alert backup-stale warn $D1 "microSD の予備環境が ${age} 日更新されていません"
+fi
+
+# --- 復旧（前回まで異常で、今回は異常でなかったもの）---
+for f in "$STATE"/*; do
+  [[ -e $f ]] || continue
+  key=${f##*/}
+  [[ -n ${seen[$key]:-} ]] && continue
+  read -r _ title < "$f"
+  raspi-notify info "復旧: $title"
+  rm -f "$f"
+done

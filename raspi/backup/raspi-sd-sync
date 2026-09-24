@@ -1,0 +1,85 @@
+#!/bin/bash
+# raspi: NVMe の中身を microSD の予備環境に複製する
+#
+# dotfiles の raspi ブランチ（raspi/backup/）から install.sh が /usr/local/sbin に配置し、
+# systemd タイマー（raspi-sd-sync.timer）が週 1 回 root で実行する。
+#
+# Pi 5 は NVMe から起動できないと microSD から起動する（BOOT_ORDER=0xf416）。
+# その予備環境を直近の状態に保つためのもの。microSD 側は自分自身を指す設定
+# （ラベル writable / system-boot）のままにするので、/etc/fstab は複製せず、
+# cmdline.txt の root= は複製後に microSD 用へ書き戻す。
+set -euo pipefail
+
+SD_ROOT_DEV=/dev/disk/by-label/writable
+SD_BOOT_DEV=/dev/disk/by-label/system-boot
+MNT=/mnt/raspi-sd-sync
+STATE=/var/lib/raspi-sd-sync
+
+log()  { echo "[$(date '+%F %T')] $*"; }
+fail() {
+  log "失敗: $1"
+  echo "fail $(date +%s) $1" > "$STATE/last-result"
+  command -v raspi-notify >/dev/null && raspi-notify high "microSD へのバックアップに失敗" "$1" || true
+  exit 1
+}
+cleanup() {
+  mountpoint -q "$MNT/boot/firmware" && umount "$MNT/boot/firmware"
+  mountpoint -q "$MNT" && umount "$MNT"
+  return 0
+}
+trap cleanup EXIT
+trap 'fail "予期しないエラー（${BASH_SOURCE[0]##*/} の ${LINENO} 行目）"' ERR
+
+mkdir -p "$STATE"
+
+# --- 前提の確認 ---
+[[ $(findmnt -n -o SOURCE /) == /dev/nvme* ]] || fail "NVMe から起動していないため中止（microSD 起動中は複製しない）"
+[[ -b $SD_ROOT_DEV && -b $SD_BOOT_DEV ]] || fail "microSD（ラベル writable / system-boot）が見つからない"
+mountpoint -q "$MNT" && fail "$MNT が使用中（前回の処理が残っている可能性）"
+
+used=$(df --output=used -B1 / | tail -1)
+cap=$(blockdev --getsize64 "$SD_ROOT_DEV")
+(( used < cap * 90 / 100 )) ||
+  fail "NVMe の使用量 $((used >> 30))GB が microSD（$((cap >> 30))GB）に収まらない"
+
+mkdir -p "$MNT"
+start=$(date +%s)
+
+# --- ルート ---
+# /boot/firmware は別のパーティションなので、ルートの複製が終わってからマウントして複製する
+log "ルートを複製"
+mount "$SD_ROOT_DEV" "$MNT"
+rsync -aHAXx --delete --numeric-ids --info=stats1 \
+  --exclude='/proc/*' --exclude='/sys/*' --exclude='/dev/*' --exclude='/run/*' \
+  --exclude='/tmp/*' --exclude='/mnt/*' --exclude='/media/*' --exclude='/lost+found' \
+  --exclude='/boot/firmware/*' --exclude='/etc/fstab' \
+  --exclude='/var/tmp/*' --exclude='/var/cache/apt/archives/*' --exclude='/home/*/.cache/*' \
+  / "$MNT/"
+
+# 動作中の Grafana の DB はそのまま複製すると壊れることがあるので、SQLite の機能で取り直す
+if [[ -f /var/lib/grafana/grafana.db ]]; then
+  sqlite3 /var/lib/grafana/grafana.db ".backup '$MNT/var/lib/grafana/grafana.db'"
+  chown --reference=/var/lib/grafana/grafana.db "$MNT/var/lib/grafana/grafana.db"
+fi
+
+# --- ブート領域 ---
+log "ブート領域を複製"
+mount "$SD_BOOT_DEV" "$MNT/boot/firmware"
+rsync -rt --delete --modify-window=2 --info=stats1 /boot/firmware/ "$MNT/boot/firmware/"
+while IFS= read -r f; do
+  sed -i -E 's/(^| )root=[^ ]+/\1root=LABEL=writable/' "$f"
+done < <(grep -rl --include=cmdline.txt 'root=' "$MNT/boot/firmware")
+
+# --- 確認 ---
+grep -q '^LABEL=writable[[:space:]]\+/[[:space:]]' "$MNT/etc/fstab" || fail "microSD の /etc/fstab が想定と違う"
+grep -q 'root=LABEL=writable' "$MNT/boot/firmware/current/cmdline.txt" || fail "microSD の cmdline.txt の書き戻しに失敗"
+kver=$(uname -r)
+[[ -d "$MNT/lib/modules/$kver" && -f "$MNT/boot/firmware/current/vmlinuz" ]] || fail "microSD にカーネル $kver が揃っていない"
+
+# microSD で起動したとき、いつの時点の環境かをログイン時に表示するための印
+date '+%Y-%m-%d %H:%M' > "$MNT/etc/raspi-backup-info"
+
+sync
+echo "ok $(date +%s) $(( $(date +%s) - start ))秒" > "$STATE/last-result"
+date +%s > "$STATE/last-success"
+log "完了（$(( $(date +%s) - start ))秒）"

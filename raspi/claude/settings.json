@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)",
+      "Bash(git branch:*)", "Bash(git switch:*)", "Bash(git add:*)", "Bash(git commit:*)",
+      "Bash(git stash:*)", "Bash(git fetch:*)", "Bash(git pull:*)", "Bash(git restore:*)",
+      "Bash(npm test:*)", "Bash(npm run:*)", "Bash(node:*)",
+      "Bash(cargo build:*)", "Bash(cargo check:*)", "Bash(cargo test:*)", "Bash(cargo fmt:*)", "Bash(cargo clippy:*)",
+      "Bash(python3 -m pytest:*)", "Bash(pytest:*)",
+      "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
+      "Bash(rg:*)", "Bash(fd:*)", "Bash(jq:*)", "Bash(tree:*)",
+      "Bash(gh pr view:*)", "Bash(gh pr list:*)", "Bash(gh pr diff:*)", "Bash(gh issue view:*)", "Bash(gh issue list:*)",
+      "Bash(ollama list)", "Bash(ollama ps)"
+    ],
+    "ask": [
+      "Bash(git push:*)", "Bash(gh pr create:*)", "Bash(gh pr merge:*)", "Bash(npm install:*)", "Bash(npx:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)", "Bash(su:*)",
+      "Bash(git push --force:*)", "Bash(git push -f:*)",
+      "Read(~/.ssh/**)", "Read(~/.claude/.credentials.json)", "Read(~/.codex/auth.json)",
+      "Read(~/.config/gh/hosts.yml)", "Read(~/.config/raspi-notify/**)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "\"$HOME/src/dotfiles/raspi/bin/claude-notify-hook\" prompt" }] }],
+    "Stop":             [{ "hooks": [{ "type": "command", "command": "\"$HOME/src/dotfiles/raspi/bin/claude-notify-hook\" stop" }] }],
+    "Notification":     [{ "hooks": [{ "type": "command", "command": "\"$HOME/src/dotfiles/raspi/bin/claude-notify-hook\" notification" }] }]
+  }
+}

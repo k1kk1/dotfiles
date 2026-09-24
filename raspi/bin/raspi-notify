@@ -1,0 +1,31 @@
+#!/bin/bash
+# raspi-notify <info|warn|high> <タイトル> [本文]
+#
+# Discord の Webhook に通知を送る（dotfiles の raspi ブランチで管理）。
+# Webhook の URL は秘密情報なのでリポジトリに入れず、次のファイルに 1 行で書く:
+#   /home/kikki/.config/raspi-notify/discord-webhook（権限 600）
+# URL が無いときは journal（journalctl -t raspi-notify）に記録するだけ。
+
+level=${1:-info} title=${2:-} body=${3:-}
+conf=${RASPI_NOTIFY_CONF:-/home/kikki/.config/raspi-notify/discord-webhook}
+
+case $level in
+  high) color=$((16#FF3B6B)) ;;
+  warn) color=$((16#FFD23B)) ;;
+  *)    color=$((16#B6FF3B)) ;;
+esac
+
+logger -t raspi-notify "[$level] $title${body:+: $body}"
+
+[[ -r $conf ]] || exit 0
+url=$(head -n1 "$conf" | tr -d '[:space:]')
+if [[ $url != https://discord.com/api/webhooks/* && $url != https://discordapp.com/api/webhooks/* ]]; then
+  logger -t raspi-notify "Webhook の URL の形式が違うため送信しない: $conf"
+  exit 0
+fi
+
+payload=$(jq -n --arg t "$title" --arg d "$body" --argjson c "$color" --arg h "$(hostname)" \
+  '{username: $h, embeds: [{title: $t, description: $d, color: $c, timestamp: (now | todate)}]}')
+curl -fsS -m 10 -H 'Content-Type: application/json' -d "$payload" "$url" >/dev/null 2>&1 ||
+  logger -t raspi-notify "Discord への送信に失敗"
+exit 0

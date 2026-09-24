@@ -1,0 +1,10 @@
+# raspi: 起動の 2 分後から 5 分ごとに異常を確認する
+[Unit]
+Description=Run raspi-alert every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

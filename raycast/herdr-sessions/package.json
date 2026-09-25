@@ -1,0 +1,46 @@
+{
+  "name": "herdr-sessions",
+  "title": "Herdr Sessions",
+  "description": "Open Herdr sessions and resume Claude Code or Codex conversations.",
+  "version": "0.1.0",
+  "icon": "icon.png",
+  "author": "kikki",
+  "license": "MIT",
+  "scripts": {
+    "dev": "ray develop",
+    "build": "ray build"
+  },
+  "commands": [
+    {
+      "name": "cheatsheet",
+      "title": "CheetSheet",
+      "subtitle": "ショートカット",
+      "description": "Open the local keyboard shortcut cheat sheet.",
+      "icon": "cheatsheet.png",
+      "mode": "no-view",
+      "keywords": ["cheet", "cheatsheet", "shortcut"]
+    },
+    {
+      "name": "sessions",
+      "title": "Herdr Sessions",
+      "description": "List Herdr sessions and open one in a terminal window.",
+      "mode": "view",
+      "keywords": ["hs", "herdr"]
+    },
+    {
+      "name": "resume",
+      "title": "Herdr Resume",
+      "description": "Resume a past Claude Code or Codex conversation.",
+      "mode": "view",
+      "keywords": ["hr", "herdr", "claude", "codex"]
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.104.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.1.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

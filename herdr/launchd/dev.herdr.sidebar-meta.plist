@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  サイドバーの $num / $dir（Workspace）と、Codex の Pane の
+  $task / $summary / $model を更新し続ける常駐プロセス。
+  スクリプト本体は herdr/bin/herdr-sidebar-meta。
+
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/dev.herdr.sidebar-meta.plist
+    launchctl bootout   gui/$UID/dev.herdr.sidebar-meta
+    tail -f /tmp/herdr-sidebar-meta.log
+
+  パスは $HOME 起点にしたいので /bin/sh 経由で起動している
+  （launchd は ProgramArguments の中の変数を展開しないため）。
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>dev.herdr.sidebar-meta</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>exec "$HOME/src/dotfiles/herdr/bin/herdr-sidebar-meta"</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Herdr が落ちている間もポーリングを続けるだけなので、常に生かしておく。 -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/herdr-sidebar-meta.log</string>
+</dict>
+</plist>

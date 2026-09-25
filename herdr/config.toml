@@ -21,6 +21,10 @@ new_cwd = "follow"
 
 prefix = "ctrl+b"
 
+# 標準の新規 Tab (`prefix+c`) は番号だけの Tab を作るため無効化し、下の
+# Pane Manager コマンドへ置き換える。現在の作業ディレクトリ名を Tab 名にする。
+new_tab = ""
+
 # 同じ番号でTab、Workspace、Agentを切り替える。
 switch_tab = "prefix+1..9"
 switch_workspace = "prefix+shift+1..9"
@@ -32,6 +36,13 @@ last_pane = "prefix+backtick"
 # ==============================================================================
 # Popup tools
 # ==============================================================================
+
+[[keys.command]]
+
+key = "prefix+c"
+type = "shell"
+command = "exec \"$HOME/src/herdr-plugins/herdr-pane-manager/target/release/herdr-pane-manager\" new-tab"
+description = "現在の作業ディレクトリ名で新しい Tab を作る"
 
 [[keys.command]]
 
@@ -185,12 +196,85 @@ show_agent_labels_on_pane_borders = true
 sidebar_width = 30
 copy_on_select = true
 
+[ui.sidebar.spaces]
+
+# 1行目に手がかり（番号・状態・ディレクトリ・branch・git）、
+# 2行目は Workspace 名。名前は長いので1行まるごと使う。
+#
+# 組み込みトークンは state_icon / state_text / workspace / branch / git_status
+# だけなので、$num / $dir / $git は workspace metadata として外から流し込む。
+# 更新するのは herdr/bin/herdr-sidebar-meta
+# （LaunchAgent dev.herdr.sidebar-meta として常駐）。
+#
+#   $num      Workspace 番号。prefix+shift+1..9 のどれで飛べるかがそのまま出る。
+#   $dir      作業ディレクトリ名（末尾のみ）
+#   $git      未コミットの数と upstream との差（●3 ↑2↓1）
+#   $elapsed  いまの状態が続いている時間。止まっている Agent に気付くため。
+#   $agents   そこで動いている Agent。priority 並びだと Agent パネル側は
+#             Workspace が混ざるので、こちらにも顔ぶれを出しておく。
+#
+# 色は Catppuccin Mocha。dim は既定より暗くて読めないので使わない。
+#   #89b4fa blue     $num（番号は目印なので少し目立たせる）
+#   #a6adc8 subtext0 $dir
+#   #f9e2af yellow   $git（放置している変更に気付けるように）
+#   #cdd6f4 text     workspace（名前が一番の手がかり）
+#   #6c7086 overlay0 3行目（状態の補足なので一番弱く）
+rows = [
+  [
+    { token = "$num", fg = "#89b4fa" },
+    "state_icon",
+    { token = "$dir", fg = "#a6adc8" },
+    "branch",
+    { token = "$git", fg = "#f9e2af" },
+    "git_status",
+  ],
+  [{ token = "workspace", fg = "#cdd6f4", dim = false }],
+  [
+    { token = "state_text", fg = "#6c7086", dim = false },
+    { token = "$elapsed", fg = "#6c7086" },
+    { token = "$agents", fg = "#6c7086" },
+  ],
+]
+
 [ui.sidebar.agents]
 
+# Agent名と状態 / タイトル / いま走っているツール / モデル / 居場所。
+# 横に長いものは1行ずつ使う。項目が増えたので row_gap で Agent 同士を離す。
+#
+# $summary $model $task は pane metadata として外から流し込む値。
+#   Claude  hooks から herdr/bin/herdr-agent-meta が報告
+#   Codex   herdr/bin/herdr-sidebar-meta が ~/.codex/sessions のログから拾う
+#
+# pane は名前を付けていない限り空、tab は "Active Agents" のような自動名で
+# 手がかりにならないので出さない。priority 並びだと Workspace が混ざるため、
+# 居場所としては workspace のほうを出す。
+#
+# 色は spaces と同じ Catppuccin Mocha。
+#   #cdd6f4 text     タイトル（既定では暗くて読めない）
+#   #89b4fa blue     $summary（いま動いているもの）
+#   #a6adc8 subtext0 $model / workspace
+row_gap = 1
+
 rows = [
-  ["state_icon", "agent", "state_text"],
-  ["terminal_title_stripped"],
-  ["pane", "tab"],
+  ["state_icon", "agent", "state_text", { token = "$elapsed", fg = "#6c7086" }],
+  [{ token = "terminal_title_stripped", fg = "#cdd6f4", dim = false }],
+  [{ token = "$summary", fg = "#89b4fa" }],
+  [{ token = "$model", fg = "#a6adc8" }],
+  [{ token = "workspace", fg = "#a6adc8", dim = false }],
+]
+
+# Codex はターミナルタイトルに作業ディレクトリ名しか出さないので、
+# タイトル行だけ $task（そのセッションの最初の指示）に差し替える。
+# 残りの行は Claude と同じ並びにして、見比べられるようにしておく。
+
+[ui.sidebar.agents.rows_by_agent]
+
+codex = [
+  ["state_icon", "agent", "state_text", { token = "$elapsed", fg = "#6c7086" }],
+  [{ token = "$task", fg = "#cdd6f4", dim = false }],
+  [{ token = "$summary", fg = "#89b4fa" }],
+  [{ token = "$model", fg = "#a6adc8" }],
+  [{ token = "workspace", fg = "#a6adc8", dim = false }],
 ]
 
 # ==============================================================================

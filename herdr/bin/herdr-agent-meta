@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Claude Code の hooks から、Agent サイドバーの $model / $summary を更新する。
+
+Herdr の Agent 行に使える組み込みトークンは state_icon / state_text /
+workspace / tab / pane / agent / terminal_title(_stripped) だけ。
+モデル名や「いま何をしているか」は pane metadata として外から流し込む。
+
+  $model    いま応答しているモデル（Opus 5 など）
+  $summary  直前に走り出したツール（Edit config.toml、Bash: git status など）
+
+hooks の標準入力に来る JSON を読み、HERDR_PANE_ID の Pane へ報告する。
+どの Pane かは Herdr が Pane のシェルに入れている環境変数で分かるので、
+セッションを跨いでも取り違えない。
+
+hooks は Claude 本体の応答をブロックするので、失敗しても黙って抜ける。
+"""
+
+import json
+import os
+import subprocess
+import sys
+
+SOURCE = "claude-agent-meta"
+
+# summary は「走り出したツール」なので、セッションが落ちたまま残ると嘘になる。
+# Stop で消しているが、消し損ねたぶんは TTL で自然に消えるようにしておく。
+SUMMARY_TTL_MS = 900_000
+
+MODEL_NAMES = {
+    "claude-opus-5": "Opus 5",
+    "claude-sonnet-5": "Sonnet 5",
+    "claude-fable-5": "Fable 5",
+    "claude-haiku-4-5": "Haiku 4.5",
+}
+
+
+def report(pane_id, tokens=(), clear=(), ttl_ms=None):
+    args = ["herdr", "pane", "report-metadata", pane_id, "--source", SOURCE]
+    for name, value in tokens:
+        args += ["--token", f"{name}={value}"]
+    for name in clear:
+        args += ["--clear-token", name]
+    if ttl_ms is not None:
+        args += ["--ttl-ms", str(ttl_ms)]
+    subprocess.run(args, capture_output=True, text=True, timeout=5)
+
+
+def model_label(transcript_path):
+    """transcript の末尾から、直近に応答したモデルを拾う。
+
+    hooks の入力にモデルは含まれないので、会話ログを後ろから見るのが確実。
+    最後の数行だけ見れば足りる。
+    """
+    if not transcript_path or not os.path.exists(transcript_path):
+        return None
+    try:
+        with open(transcript_path, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            size = fh.tell()
+            window = min(size, 256 * 1024)
+            fh.seek(size - window)
+            lines = fh.read().decode("utf-8", "replace").splitlines()
+    except OSError:
+        return None
+
+    for line in reversed(lines):
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        message = entry.get("message")
+        if entry.get("type") != "assistant" or not isinstance(message, dict):
+            continue
+        model = message.get("model")
+        if not model:
+            continue
+        # 日付サフィックス付き（claude-haiku-4-5-20251001）も同じ名前に寄せる。
+        for key, label in MODEL_NAMES.items():
+            if model.startswith(key):
+                return label
+        return model
+    return None
+
+
+def shorten(text, limit=40):
+    text = " ".join(str(text).split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def tool_summary(tool_name, tool_input):
+    """ツール呼び出しを1行に畳む。何をしているかが分かる引数だけ選ぶ。"""
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+
+    # MCP ツールは mcp__server__method と長いので、末尾だけ見せる。
+    name = tool_name
+    if name.startswith("mcp__"):
+        name = name.split("__")[-1]
+
+    detail = None
+    if tool_name == "Bash":
+        detail = tool_input.get("command")
+    elif tool_name in ("Read", "Edit", "Write", "NotebookEdit"):
+        path = tool_input.get("file_path") or ""
+        detail = os.path.basename(path.rstrip("/")) or path
+    elif tool_name in ("Grep", "Glob"):
+        detail = tool_input.get("pattern")
+    elif tool_name == "Task":
+        detail = tool_input.get("subagent_type") or tool_input.get("description")
+    elif tool_name == "Skill":
+        detail = tool_input.get("skill")
+    elif tool_name == "WebFetch":
+        url = tool_input.get("url") or ""
+        detail = url.split("/")[2] if url.count("/") >= 2 else url
+    elif tool_name == "WebSearch":
+        detail = tool_input.get("query")
+
+    if not detail:
+        return shorten(name)
+    return shorten(f"{name} {detail}")
+
+
+def main():
+    pane_id = os.environ.get("HERDR_PANE_ID")
+    if not pane_id:
+        return
+
+    try:
+        payload = json.load(sys.stdin)
+    except ValueError:
+        return
+
+    event = payload.get("hook_event_name")
+
+    if event in ("SessionStart", "UserPromptSubmit"):
+        # モデルは /model でいつでも変わるので、プロンプトごとに追随する。
+        label = model_label(payload.get("transcript_path"))
+        if label:
+            report(pane_id, tokens=[("model", label)])
+        if event == "UserPromptSubmit":
+            report(pane_id, tokens=[("summary", "考え中")], ttl_ms=SUMMARY_TTL_MS)
+
+    elif event == "PreToolUse":
+        summary = tool_summary(payload.get("tool_name", ""), payload.get("tool_input"))
+        report(pane_id, tokens=[("summary", summary)], ttl_ms=SUMMARY_TTL_MS)
+
+    elif event in ("Stop", "SessionEnd"):
+        report(pane_id, clear=["summary"])
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception:
+        # hooks の失敗で Claude を止めない。
+        pass
+    sys.exit(0)

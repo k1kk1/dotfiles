@@ -50,10 +50,12 @@ path=(
   # Apple Silicon Homebrew
   "/opt/homebrew/bin"
   "/opt/homebrew/sbin"
+  "/opt/homebrew/opt/rustup/bin"
 
   # Intel Mac / common local paths
   "/usr/local/bin"
   "/usr/local/sbin"
+  "/usr/local/opt/rustup/bin"
 
   # system
   "/usr/bin"

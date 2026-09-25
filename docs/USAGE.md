@@ -15,7 +15,10 @@ dotfiles/
 ├── ghostty/
 │   └── config          ターミナル設定 -> ~/.config/ghostty/config
 ├── herdr/
-│   └── config.toml     Herdr設定 -> ~/.config/herdr/config.toml
+│   ├── config.toml     Herdr設定 -> ~/.config/herdr/config.toml
+│   ├── bin/            サイドバー表示用のスクリプト
+│   ├── launchd/        LaunchAgent 定義 -> ~/Library/LaunchAgents/
+│   └── claude-hooks.json  Claude Code の hooks（~/.claude/settings.json へマージ）
 ├── tmux/
 │   └── .tmux.conf      tmux設定 -> ~/.tmux.conf
 └── docs/
@@ -83,6 +86,54 @@ Agentは対応優先度順に並び、外側のターミナル経由で完了・
 
 ```zsh
 herdr server reload-config
+```
+
+### サイドバーの表示
+
+Herdr の行トークンは組み込みが少ないので、足りないものは metadata として
+外から流し込んでいる（`$` 付きがそれ）。
+
+```text
+1 ● dotfiles · main · ●7        番号($num) / 状態 / ディレクトリ($dir) / branch / git($git)
+  Herdr pane manager プラグイン    Workspace 名（長いので1行使う）
+  working · 4m · claude·codex   状態 / 経過時間($elapsed) / 顔ぶれ($agents)
+
+● claude · working · 4m         Agent / 状態 / 経過時間
+  Herdr ワークスペース表示          タイトル
+  Edit config.toml              いま走っているツール($summary)
+  Opus 5                        モデル($model)
+  dotfiles                      Workspace
+
+● codex · working · 12m
+  alfredでチートシートを…           最初の指示($task)
+  Bash npm run build
+  GPT-5.6-terra
+  raycast 拡張
+```
+
+Claude と Codex で同じ並びにしてある。タイトル行だけ出どころが違い、
+Claude はセッションのタイトル、Codex は最初の指示（`$task`）を出す
+（Codex はターミナルタイトルに作業ディレクトリ名しか出さないため）。
+
+`$git` は未コミット数（untracked 含む）と upstream との差で、`●7 ↑2↓1` の形。
+`$elapsed` はその状態が続いている時間で、30秒未満は出さない。
+
+| トークン | 出どころ |
+| --- | --- |
+| `$num` `$dir` `$git` `$elapsed` `$agents` | `herdr/bin/herdr-sidebar-meta`（LaunchAgent で常駐、2秒ごと） |
+| `$task` `$summary` `$model`（Codex） | 同上。`~/.codex/sessions` の rollout ログから拾う |
+| `$summary` `$model`（Claude） | `herdr/bin/herdr-agent-meta`（Claude Code の hooks から呼ばれる） |
+
+metadata は Herdr サーバのメモリ上にしかないので、サーバを再起動すると消える。
+`$num` / `$dir` は常駐プロセスがすぐ入れ直す。`$model` / `$summary` は
+次のプロンプトかツール実行のときに戻る。
+
+常駐プロセスの操作:
+
+```zsh
+launchctl kickstart -k gui/$UID/dev.herdr.sidebar-meta   # 再起動
+launchctl bootout gui/$UID/dev.herdr.sidebar-meta        # 停止
+tail -f /tmp/herdr-sidebar-meta.log                      # ログ
 ```
 
 ---

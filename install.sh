@@ -171,7 +171,96 @@ _herdr_plugins_setup() {
 _herdr_plugins_setup
 
 # ------------------------------------------------------------------------------
-# 5. 動作確認
+# 5. Herdr サイドバーの metadata
+# ------------------------------------------------------------------------------
+#
+# サイドバーの $num / $dir（Workspace）と、Codex の Pane の $task / $summary /
+# $model を更新し続ける常駐プロセス（herdr/bin/herdr-sidebar-meta）を
+# LaunchAgent として登録する。Herdr の組み込みトークンには無い値なので、
+# metadata として外から流し込んでいる。
+
+_head "Herdr サイドバーの metadata"
+
+_herdr_sidebar_meta_setup() {
+  local label="dev.herdr.sidebar-meta"
+  local src="$DOTFILES_DIR/herdr/launchd/$label.plist"
+  local dst="$HOME/Library/LaunchAgents/$label.plist"
+
+  # plist の中で $HOME/src/dotfiles を直接指している（launchd が変数を
+  # 展開しないので /bin/sh 経由）。置き場所がずれたら気付けるようにする。
+  if [[ "$DOTFILES_DIR" != "$HOME/src/dotfiles" ]]; then
+    _fail "$label.plist は ~/src/dotfiles を前提にしています。パスを合わせてください"
+    return
+  fi
+
+  _symlink "$src" "$dst"
+
+  launchctl bootout "gui/$UID/$label" &>/dev/null || true
+  if launchctl bootstrap "gui/$UID" "$dst" &>/dev/null; then
+    _ok "$label を起動しました"
+  else
+    _fail "$label の起動に失敗しました (launchctl bootstrap)"
+  fi
+}
+
+_herdr_sidebar_meta_setup
+
+# ------------------------------------------------------------------------------
+# 6. Claude Code hooks（Agent 行の $model / $summary）
+# ------------------------------------------------------------------------------
+#
+# ~/.claude/settings.json は dotfiles の管理外（マシン固有の設定が入る）なので、
+# シンボリックリンクではなく hooks の部分だけを jq でマージする。
+# 同じコマンドが既に登録されていれば何もしない。
+
+_head "Claude Code hooks"
+
+_claude_hooks_setup() {
+  local snippet="$DOTFILES_DIR/herdr/claude-hooks.json"
+  local settings="$HOME/.claude/settings.json"
+  local cmd='"$HOME/src/dotfiles/herdr/bin/herdr-agent-meta"'
+
+  if ! command -v jq &>/dev/null; then
+    _fail "jq が見つかりません。hooks の追加をスキップします"
+    return
+  fi
+
+  if [[ ! -f "$settings" ]]; then
+    _fail "${settings/$HOME/~} がありません。Claude Code を一度起動してください"
+    return
+  fi
+
+  if jq -e --arg cmd "$cmd" \
+      '[.hooks // {} | .[]? | .[]? | .hooks[]? | .command] | index($cmd)' \
+      "$settings" &>/dev/null; then
+    _skip "herdr-agent-meta hooks (already registered)"
+    return
+  fi
+
+  # 壊すと Claude Code の設定が丸ごと無効になるので、退避してから書き換える。
+  local backup="$settings.backup.$(date +%Y%m%d%H%M%S)"
+  cp "$settings" "$backup"
+
+  # `*` での合成だと既存の同じイベントの配列ごと置き換わってしまうので、
+  # イベントごとに配列へ足す形でマージする。
+  local tmp="$settings.tmp.$$"
+  if jq --slurpfile add "$snippet" '
+        .hooks = (
+          reduce ($add[0].hooks | to_entries[]) as $e
+            (.hooks // {}; .[$e.key] = ((.[$e.key] // []) + $e.value))
+        )' "$settings" > "$tmp" && jq -e . "$tmp" &>/dev/null; then
+    mv "$tmp" "$settings"
+    _ok "herdr-agent-meta hooks を追加 (backup: ${backup/$HOME/~})"
+  else
+    rm -f "$tmp"
+    _fail "hooks のマージに失敗しました"
+  fi
+}
+
+_claude_hooks_setup
+
+# ------------------------------------------------------------------------------
+# 7. 動作確認
 # ------------------------------------------------------------------------------
 
 _head "動作確認"

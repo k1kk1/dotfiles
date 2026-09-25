@@ -1,0 +1,542 @@
+#!/usr/bin/env python3
+"""Herdr のサイドバーへ、組み込みトークンには無い値を流し込む常駐スクリプト。
+
+Herdr の行トークンは組み込みが少ない（Space は state_icon / state_text /
+workspace / branch / git_status、Agent は state_icon / state_text /
+workspace / tab / pane / agent / terminal_title(_stripped)）。
+足りないものは metadata として外から報告する仕組みがあるので、ここで作る。
+
+  Workspace
+    $num   Workspace 番号。prefix+shift+1..9 のどれで飛べるかがそのまま出る。
+    $dir   作業ディレクトリ名（末尾のみ）
+    $git   未コミットの数と upstream との差（●3 ↑2↓1）
+    $agents  そこで動いている Agent（claude·codex）
+    $elapsed いまの状態が続いている時間（4m）
+
+  すべての Agent の Pane
+    $elapsed いまの状態が続いている時間
+
+  Codex の Pane
+    $task     そのセッションの最初の指示（Claude のタイトル行に相当）
+    $summary  直前に完了したツール（Bash npm run dev、Edit sessions.tsx など）
+    $model    使っているモデル
+
+Claude の Pane 側の $summary / $model は hooks から herdr-agent-meta が報告する。
+二重に書くと取り合いになるので、ここでは agent が codex の Pane だけを触る。
+
+Codex には hooks が無いので、~/.codex/sessions の rollout ログを読む。
+Pane と rollout の対応は cwd が一致するもののうち一番新しいファイル。
+同じディレクトリで Codex を2つ動かすと取り違えうるが、その場合も新しい順に
+別々のファイルを割り当てるので、両方が同じ値になることはない。
+"""
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+SOURCE = "sidebar-meta"
+INTERVAL = 2.0
+
+CODEX_SESSIONS = os.path.expanduser("~/.codex/sessions")
+
+# rollout ファイルの探索結果はしばらく使い回す（毎回ディレクトリを舐めない）。
+ROLLOUT_SCAN_TTL = 10.0
+
+# モデルの読み直し間隔（秒）。/model の切り替えに追随するため。
+MODEL_REFRESH = 60.0
+
+# git status の実行間隔（秒）。大きいリポジトリでも負担にならない程度に空ける。
+GIT_REFRESH = 5.0
+
+# 経過時間を出し始めるまで（秒）。短い作業でチカチカさせないため。
+ELAPSED_MIN = 30
+
+META_BYTES = 64 * 1024
+TAIL_BYTES = 256 * 1024
+HEAD_BYTES = 512 * 1024
+
+
+# ------------------------------------------------------------------------------
+# Herdr
+# ------------------------------------------------------------------------------
+
+
+def snapshot():
+    out = subprocess.run(
+        ["herdr", "api", "snapshot"], capture_output=True, text=True, timeout=10
+    )
+    if out.returncode != 0:
+        return None
+    return json.loads(out.stdout)["result"]["snapshot"]
+
+
+def report(kind, target_id, tokens=(), clear=(), ttl_ms=None):
+    args = [kind, "report-metadata", target_id, "--source", SOURCE]
+    for name, value in tokens:
+        args += ["--token", f"{name}={value}"]
+    for name in clear:
+        args += ["--clear-token", name]
+    if ttl_ms is not None:
+        args += ["--ttl-ms", str(ttl_ms)]
+    subprocess.run(["herdr"] + args, capture_output=True, text=True, timeout=10)
+
+
+# ------------------------------------------------------------------------------
+# Workspace
+# ------------------------------------------------------------------------------
+
+
+def pane_dir(pane):
+    return pane.get("foreground_cwd") or pane.get("cwd") or ""
+
+
+# (種別, id) -> (状態, その状態になった時刻)
+_state_since = {}
+
+
+def elapsed_label(kind, target_id, status):
+    """status が変わらないまま経過した時間。短いうちは出さない。
+
+    秒は15秒単位に丸める。2秒ごとに書き換えると、その都度サイドバーへ
+    報告することになって落ち着かないため。
+    """
+    now = time.monotonic()
+    previous = _state_since.get((kind, target_id))
+    if previous is None or previous[0] != status:
+        _state_since[(kind, target_id)] = (status, now)
+        return ""
+
+    seconds = int(now - previous[1])
+    if seconds < ELAPSED_MIN:
+        return ""
+    if seconds < 60:
+        return f"{seconds // 15 * 15}s"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes}m"
+    return f"{minutes // 60}h{minutes % 60:02d}m"
+
+
+def forget_states(kind, alive):
+    for key in list(_state_since):
+        if key[0] == kind and key[1] not in alive:
+            del _state_since[key]
+
+
+_git_cache = {}  # dir -> (時刻, 表示文字列)
+
+
+def git_summary(path):
+    """未コミットの数と upstream との差。きれいなら空。
+
+    例: ●3      3ファイルに変更あり（untracked 含む）
+        ↑2↓1    push していないのが2、pull していないのが1
+    """
+    now = time.monotonic()
+    cached = _git_cache.get(path)
+    if cached and now - cached[0] < GIT_REFRESH:
+        return cached[1]
+
+    try:
+        out = subprocess.run(
+            ["git", "-C", path, "status", "--porcelain=v2", "--branch"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        out = None
+
+    text = ""
+    if out is not None and out.returncode == 0:
+        changed = 0
+        ahead = behind = 0
+        for line in out.stdout.splitlines():
+            if line.startswith("# branch.ab "):
+                parts = line.split()
+                for part in parts[2:]:
+                    if part.startswith("+"):
+                        ahead = int(part[1:])
+                    elif part.startswith("-"):
+                        behind = int(part[1:])
+            elif line and not line.startswith("#"):
+                changed += 1
+
+        pieces = []
+        if changed:
+            pieces.append(f"●{changed}")
+        if ahead or behind:
+            pieces.append(
+                (f"↑{ahead}" if ahead else "") + (f"↓{behind}" if behind else "")
+            )
+        text = " ".join(pieces)
+
+    _git_cache[path] = (now, text)
+    return text
+
+
+def workspace_tokens(snap):
+    """workspace_id -> {トークン名: 値}"""
+    tokens = {}
+    for ws in snap.get("workspaces", []):
+        wid = ws["workspace_id"]
+        entry = {}
+
+        # 番号は herdr 側が振っているものをそのまま借りる。
+        number = ws.get("number")
+        if number is not None:
+            entry["num"] = str(number)
+
+        ws_panes = [p for p in snap.get("panes", []) if p.get("workspace_id") == wid]
+
+        # cwd は「いま画面に映っているもの」を出したいので、アクティブ Tab に絞る。
+        tab = ws.get("active_tab_id")
+        panes = [p for p in ws_panes if tab is None or p.get("tab_id") == tab]
+        pane = next((p for p in panes if p.get("focused")), panes[0]) if panes else None
+        path = pane_dir(pane) if pane else ""
+        if path:
+            # ~ 直下やルートは basename が空・紛らわしいので、その場合はパスを縮めて出す。
+            name = os.path.basename(path.rstrip("/"))
+            if not name:
+                name = path
+            elif path == os.path.expanduser("~"):
+                name = "~"
+            entry["dir"] = name
+
+            git = git_summary(path)
+            if git:
+                entry["git"] = git
+
+        # 何が動いているか。Agent パネルは priority 順で Workspace が混ざるので、
+        # こちら側にも顔ぶれを出しておくと行き来が減る。
+        agents = []
+        for other in ws_panes:
+            agent = other.get("agent")
+            if agent and agent not in agents:
+                agents.append(agent)
+        if agents:
+            entry["agents"] = "·".join(agents)
+
+        elapsed = elapsed_label("workspace", wid, ws.get("agent_status"))
+        if elapsed:
+            entry["elapsed"] = elapsed
+
+        if entry:
+            tokens[wid] = entry
+    return tokens
+
+
+# ------------------------------------------------------------------------------
+# Codex
+# ------------------------------------------------------------------------------
+
+
+def shorten(text, limit=40):
+    text = " ".join(str(text).split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def read_window(path, size, from_end):
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            total = fh.tell()
+            if from_end:
+                fh.seek(max(0, total - size))
+            else:
+                fh.seek(0)
+            data = fh.read(size)
+    except OSError:
+        return []
+    lines = data.decode("utf-8", "replace").splitlines()
+    # 端の行は切れている可能性があるので落とす。
+    if from_end and total > size and lines:
+        lines = lines[1:]
+    return lines
+
+
+def iter_payloads(lines):
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        payload = entry.get("payload")
+        if isinstance(payload, dict):
+            yield payload
+
+
+# 直近これだけの間に書かれた rollout だけを候補にする。再開したセッションは
+# 古い日付のディレクトリのまま mtime だけ新しくなるので、日付ではなく mtime で見る。
+ROLLOUT_MAX_AGE = 7 * 24 * 3600
+ROLLOUT_MAX_FILES = 40
+
+# path -> cwd。session_meta の cwd は途中で変わらないので、一度読んだら覚えておく。
+_rollout_cwd = {}
+
+
+def rollout_cwd(path):
+    if path in _rollout_cwd:
+        return _rollout_cwd[path]
+    cwd = None
+    # 先頭の session_meta に cwd が入っている。この行は base_instructions を
+    # 丸ごと抱えていて数十KBあるので、窓は大きめに取る。
+    for payload in iter_payloads(read_window(path, META_BYTES, from_end=False)):
+        if payload.get("session_id") and payload.get("cwd"):
+            cwd = payload["cwd"]
+            break
+    _rollout_cwd[path] = cwd
+    return cwd
+
+
+def rollout_candidates():
+    """最近書かれた rollout を新しい順に (mtime, path, cwd) で返す。"""
+    cutoff = time.time() - ROLLOUT_MAX_AGE
+    found = []
+    for root, _dirs, names in os.walk(CODEX_SESSIONS):
+        for name in names:
+            if not name.endswith(".jsonl"):
+                continue
+            path = os.path.join(root, name)
+            try:
+                mtime = os.path.getmtime(path)
+            except OSError:
+                continue
+            if mtime >= cutoff:
+                found.append((mtime, path))
+
+    found.sort(reverse=True)
+
+    out = []
+    for mtime, path in found[:ROLLOUT_MAX_FILES]:
+        cwd = rollout_cwd(path)
+        if cwd:
+            out.append((mtime, path, cwd))
+    return out
+
+
+def model_label(name):
+    return str(name).replace("gpt", "GPT")
+
+
+def codex_model(path):
+    """使っているモデル名。
+
+    /model で切り替えると thread_settings_applied が後ろに積まれるので、
+    まず末尾を見る。切り替えていなければ先頭の world_state にしか無い
+    （thread_settings_applied はログの中ほどに埋もれていて、そこまで
+    読むには数十MB舐めることになるので追わない）。
+    """
+    payloads = list(iter_payloads(read_window(path, TAIL_BYTES, from_end=True)))
+    for payload in reversed(payloads):
+        settings = payload.get("thread_settings")
+        if isinstance(settings, dict) and settings.get("model"):
+            return model_label(settings["model"])
+
+    for payload in iter_payloads(read_window(path, HEAD_BYTES, from_end=False)):
+        state = payload.get("state")
+        if not isinstance(state, dict):
+            continue
+        mode = state.get("collaboration_mode")
+        if isinstance(mode, dict) and mode.get("model"):
+            return model_label(mode["model"])
+    return None
+
+
+def codex_task(path):
+    """最初のユーザー指示。Claude がタイトルに出しているものに相当する。"""
+    for payload in iter_payloads(read_window(path, HEAD_BYTES, from_end=False)):
+        item = payload.get("item")
+        if not isinstance(item, dict) or item.get("type") != "UserMessage":
+            continue
+        for part in item.get("content", []):
+            if isinstance(part, dict) and part.get("type") == "text":
+                text = part.get("text", "").strip()
+                if text:
+                    return shorten(text)
+    return None
+
+
+def codex_summary(path):
+    """直前に完了したツール。Claude 側の $summary と同じ書き方に寄せる。"""
+    payloads = list(iter_payloads(read_window(path, TAIL_BYTES, from_end=True)))
+    for payload in reversed(payloads):
+        if payload.get("type") != "item_completed":
+            continue
+        item = payload.get("item")
+        if not isinstance(item, dict):
+            continue
+        kind = item.get("type")
+
+        if kind == "CommandExecution":
+            command = item.get("command") or []
+            # ["/bin/zsh", "-lc", "npm run dev"] のような包みは剥がす。
+            text = command[-1] if command else ""
+            return shorten(f"Bash {text}") if text else None
+
+        if kind == "FileChange":
+            changes = item.get("changes") or {}
+            paths = list(changes)
+            if not paths:
+                continue
+            name = os.path.basename(paths[0])
+            more = f" 他{len(paths) - 1}件" if len(paths) > 1 else ""
+            return shorten(f"Edit {name}{more}")
+
+        if kind == "ImageView":
+            path_value = (item.get("path") or "").replace("file://", "")
+            return shorten(f"Read {os.path.basename(path_value)}")
+
+        if kind == "Extension":
+            if item.get("kind") == "web.search":
+                return shorten(f"WebSearch {item.get('query') or ''}")
+            return shorten(str(item.get("kind") or "Extension"))
+
+    return None
+
+
+class CodexReader:
+    """Pane と rollout ファイルの対応、および読み取り結果の使い回し。"""
+
+    def __init__(self):
+        self.scanned_at = 0.0
+        self.candidates = []
+        self.static = {}  # path -> {"task":..., "model":...}
+
+    def candidates_now(self):
+        now = time.monotonic()
+        if now - self.scanned_at > ROLLOUT_SCAN_TTL or not self.candidates:
+            try:
+                self.candidates = rollout_candidates()
+            except OSError:
+                self.candidates = []
+            self.scanned_at = now
+        return self.candidates
+
+    def assign(self, panes):
+        """cwd が一致する新しい順に、Pane へ1つずつ割り当てる。"""
+        candidates = self.candidates_now()
+        used = set()
+        mapping = {}
+        for pane in panes:
+            cwd = pane_dir(pane)
+            for _, path, session_cwd in candidates:
+                if path in used or session_cwd != cwd:
+                    continue
+                used.add(path)
+                mapping[pane["pane_id"]] = path
+                break
+        return mapping
+
+    def tokens_for(self, path):
+        entry = self.static.get(path)
+        now = time.monotonic()
+        if entry is None:
+            # 最初の指示は変わらないので、一度読んだら使い回す。
+            entry = {"task": codex_task(path), "model": None, "model_at": 0.0}
+            self.static[path] = entry
+        if now - entry["model_at"] > MODEL_REFRESH:
+            # モデルは /model で変わりうるので、たまに見直す。
+            entry["model"] = codex_model(path)
+            entry["model_at"] = now
+
+        tokens = {}
+        if entry["task"]:
+            tokens["task"] = entry["task"]
+        if entry["model"]:
+            tokens["model"] = entry["model"]
+        return tokens
+
+
+# ------------------------------------------------------------------------------
+
+
+def main():
+    codex = CodexReader()
+    last_ws = {}
+    last_pane = {}
+
+    while True:
+        try:
+            snap = snapshot()
+        except Exception:
+            snap = None
+
+        if snap is None:
+            # Herdr が起動していない間は何も送れない。次に出てきたときへ送り直せるよう、
+            # 記憶だけ捨てておく。
+            last_ws.clear()
+            last_pane.clear()
+            time.sleep(INTERVAL)
+            continue
+
+        current_ws = workspace_tokens(snap)
+        for wid, entry in current_ws.items():
+            previous = last_ws.get(wid)
+            if previous == entry:
+                continue
+            # commit して git が空になった、のように消えた値は明示的に消す。
+            # 報告は指定したトークンを上書きするだけで、触れなかったものは残る。
+            clear = [name for name in (previous or {}) if name not in entry]
+            report("workspace", wid, tokens=entry.items(), clear=clear)
+            last_ws[wid] = entry
+        for wid in list(last_ws):
+            if wid not in current_ws:
+                del last_ws[wid]
+
+        agent_panes = [p for p in snap.get("panes", []) if p.get("agent")]
+        codex_panes = [p for p in agent_panes if p.get("agent") == "codex"]
+        try:
+            mapping = codex.assign(codex_panes)
+        except Exception:
+            mapping = {}
+
+        seen = set()
+        for pane in agent_panes:
+            pane_id = pane["pane_id"]
+            seen.add(pane_id)
+            entry = {}
+
+            elapsed = elapsed_label("pane", pane_id, pane.get("agent_status"))
+            if elapsed:
+                entry["elapsed"] = elapsed
+
+            # Codex には hooks が無いので、$task / $model / $summary はログから作る。
+            # Claude のぶんは herdr-agent-meta が hooks から報告するので触らない。
+            path = mapping.get(pane_id)
+            if path:
+                entry.update(codex.tokens_for(path))
+                # 手が空いているときに直前のツールを出したままにしない。
+                if pane.get("agent_status") == "working":
+                    summary = codex_summary(path)
+                    if summary:
+                        entry["summary"] = summary
+
+            previous = last_pane.get(pane_id, {})
+            if previous == entry:
+                continue
+
+            # TTL は付けない。値が変わらない間は報告しないので、TTL を付けると
+            # 長く同じ作業をしているときに表示だけ消えてしまう。
+            # 手が空いたときの summary はここで clear するので残らない。
+            clear = [name for name in previous if name not in entry]
+            report("pane", pane_id, tokens=entry.items(), clear=clear)
+            last_pane[pane_id] = entry
+
+        for pane_id in list(last_pane):
+            if pane_id not in seen:
+                del last_pane[pane_id]
+
+        forget_states("workspace", set(current_ws))
+        forget_states("pane", seen)
+
+        time.sleep(INTERVAL)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)

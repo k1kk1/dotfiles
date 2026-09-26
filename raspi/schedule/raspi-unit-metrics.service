@@ -1,0 +1,10 @@
+# raspi: サービスとタイマーの状態を node_exporter の textfile に書く（Grafana の raspi services 用）
+[Unit]
+Description=Write raspi unit metrics for node_exporter
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/raspi-schedule-collect --metrics /var/lib/prometheus/node-exporter/raspi_units.prom
+Nice=19
+# 1 分ごとに動くので、開始・終了の記録を journal に残さない
+LogLevelMax=warning

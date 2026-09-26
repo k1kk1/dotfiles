@@ -4,6 +4,7 @@ Description=Refresh raspi schedule page when unit files change
 
 [Path]
 PathChanged=/etc/systemd/system
+PathChanged=/home/kikki/.config/systemd/user
 Unit=raspi-schedule-collect.service
 
 [Install]

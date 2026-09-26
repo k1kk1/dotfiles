@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """raspi-schedule-collect [出力先ディレクトリ]
+raspi-schedule-collect --metrics [出力先ファイル]
 
-systemd のタイマーと常駐サービスを調べて data.json に書く（dotfiles の raspi ブランチで管理）。
-raspi-schedule-collect.timer（10 分ごと）と .path（ユニットの追加・削除）から root で起動する。
-ページは tailscale serve で https://raspi.tail5255ae.ts.net/schedule/ に公開している。
+systemd のタイマーと常駐サービス（システムと kikki のユーザーサービス）を調べる（dotfiles の raspi ブランチで管理）。
+- 引数なし: data.json に書く。raspi-schedule-collect.timer（10 分ごと）と .path（ユニットの追加・削除）から起動。
+  ページは tailscale serve で https://raspi.tail5255ae.ts.net/schedule/ に公開している
+- --metrics: node_exporter の textfile に Prometheus のメトリクスを書く。raspi-unit-metrics.timer（1 分ごと）から起動。
+  Grafana の「raspi services」ダッシュボードで見る
 
 ユーザー設定かどうか: ユニットファイルが /etc/systemd/system か /home にあるもの、
 または EXTRA_USER に挙げた「自分で入れたパッケージ」のもの。それ以外はシステム（Ubuntu 標準）。
 """
+import functools
 import json
 import os
 import re
@@ -16,7 +20,9 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "/var/lib/raspi-schedule"
+METRICS = len(sys.argv) > 1 and sys.argv[1] == "--metrics"
+ARGS = sys.argv[2:] if METRICS else sys.argv[1:]
+OUT = ARGS[0] if ARGS else ("/var/lib/prometheus/node-exporter/raspi_units.prom" if METRICS else "/var/lib/raspi-schedule")
 USER = "kikki"
 DOTFILES = f"/home/{USER}/src/dotfiles/raspi"
 # apt で自分で入れたもの（ユニットファイルは /usr/lib にあるがユーザー設定として扱う）
@@ -30,14 +36,31 @@ def run(*args):
     return r.stdout
 
 
-def show(unit, props, user=False):
-    args = ["systemctl"] + (["--user", f"--machine={USER}@"] if user else []) + \
-        ["show", unit, "--no-pager"] + [f"-p{p}" for p in props]
-    out = {}
-    for line in run(*args).splitlines():
+def mgr(user):
+    return ["--user", f"--machine={USER}@"] if user else []
+
+
+def show_many(units, props, user=False):
+    """複数のユニットをまとめて systemctl show する（結果は空行で区切られ、指定した順に並ぶ）"""
+    if not units:
+        return []
+    args = ["systemctl", *mgr(user), "show", "--no-pager", "--timestamp=unix"] + \
+        [f"-p{p}" for p in props] + list(units)
+    blocks, cur = [], {}
+    for line in run(*args).splitlines() + [""]:
+        if not line:
+            if cur:
+                blocks.append({k: v if len(v) > 1 else v[0] for k, v in cur.items()})
+            cur = {}
+            continue
         k, _, v = line.partition("=")
-        out.setdefault(k, []).append(v)
-    return {k: v if len(v) > 1 else v[0] for k, v in out.items()}
+        cur.setdefault(k, []).append(v)
+    return blocks
+
+
+def show(unit, props, user=False):
+    got = show_many([unit], props, user)
+    return got[0] if got else {}
 
 
 UNIT = {"us": 1e-6, "ms": 1e-3, "s": 1, "sec": 1, "min": 60, "m": 60, "h": 3600, "d": 86400, "w": 604800,
@@ -72,6 +95,11 @@ def exec_path(info):
     return m.group(1) if m else ""
 
 
+@functools.lru_cache(maxsize=None)
+def in_dotfiles(exe):
+    return bool(run("find", DOTFILES, "-name", exe, "-print", "-quit").strip())
+
+
 def owner(name, info):
     """(user?, 管理元の名前)"""
     frag = info.get("FragmentPath", "")
@@ -82,9 +110,9 @@ def owner(name, info):
         if m and m.group(1) != "dotfiles":
             return True, m.group(1)
         exe = os.path.basename(exec_path(info))
-        if exe and run("find", DOTFILES, "-name", exe, "-print", "-quit").strip():
+        if exe and in_dotfiles(exe):
             return True, "dotfiles"
-        if frag.startswith("/usr/lib/"):
+        if frag.startswith("/usr/lib/") and not METRICS:  # 1 分ごとのときは dpkg を呼ばない
             pkg = run("dpkg", "-S", frag).split(":")[0].strip()
             return True, pkg or base
         return True, base
@@ -247,26 +275,86 @@ def services():
         u = unit_of(pid)
         if u:
             listening.setdefault(u, set()).update(addrs)
-    units = json.loads(run("systemctl", "list-units", "--type=service", "--state=running",
-                           "--output=json") or "[]")
+    props = ["Description", "FragmentPath", "ExecStart", "WorkingDirectory", "MemoryCurrent",
+             "CPUUsageNSec", "ActiveEnterTimestamp", "TasksCurrent"]
     rows = []
-    for u in units:
-        name = u["unit"]
-        info = show(name, ["Description", "FragmentPath", "ExecStart", "WorkingDirectory", "MemoryCurrent",
-                           "CPUUsageNSec", "ActiveEnterTimestamp", "TasksCurrent"])
-        mine, group = owner(name, info)
-        since = info.get("ActiveEnterTimestamp", "")
-        try:
-            since_ts = datetime.strptime(" ".join(since.split()[1:3]), "%Y-%m-%d %H:%M:%S").timestamp()
-        except ValueError:
-            since_ts = None
-        rows.append({
-            "unit": name, "desc": info.get("Description", ""), "mine": mine, "group": group,
-            "mem": num(info.get("MemoryCurrent")), "cpu": (num(info.get("CPUUsageNSec")) or 0) / 1e9,
-            "since": since_ts, "tasks": num(info.get("TasksCurrent")),
-            "listen": sorted(listening.get(name, [])),
-        })
+    for user in (False, True):
+        units = [u["unit"] for u in json.loads(run("systemctl", *mgr(user), "list-units", "--type=service",
+                                                   "--state=running", "--output=json") or "[]")]
+        for name, info in zip(units, show_many(units, props, user)):
+            mine, group = owner(name, info)
+            since = info.get("ActiveEnterTimestamp", "")
+            rows.append({
+                "unit": name, "user_manager": user, "desc": info.get("Description", ""),
+                "mine": mine, "group": group,
+                "mem": num(info.get("MemoryCurrent")), "cpu": (num(info.get("CPUUsageNSec")) or 0) / 1e9,
+                "since": float(since[1:]) if since.startswith("@") else None,
+                "tasks": num(info.get("TasksCurrent")),
+                "listen": sorted(listening.get(name, [])),
+            })
     return rows
+
+
+def metrics():
+    """Grafana 用: サービスの状態・CPU・メモリ・再起動回数と、タイマーの前回の結果"""
+    props = ["Id", "Description", "FragmentPath", "ExecStart", "WorkingDirectory", "Type", "ActiveState",
+             "Result", "NRestarts", "ActiveEnterTimestamp", "MemoryCurrent", "CPUUsageNSec",
+             "ExecMainStartTimestampMonotonic", "ExecMainExitTimestampMonotonic"]
+    out = {}  # メトリクス名 → 行
+
+    def put(name, labels, value):
+        lab = ",".join(f'{k}="{str(v).replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34))}"'
+                       for k, v in labels.items())
+        out.setdefault(name, []).append(f"{name}{{{lab}}} {value}")
+
+    for user in (False, True):
+        manager = "user" if user else "system"
+        timers = json.loads(run("systemctl", *mgr(user), "list-timers", "--all", "--output=json") or "[]")
+        by_service = {t["activates"]: t for t in timers if t.get("activates")}
+        units = [u["unit"] for u in json.loads(run("systemctl", *mgr(user), "list-units", "--type=service",
+                                                   "--all", "--output=json") or "[]")
+                 if u.get("load") == "loaded" and (u.get("sub") == "running" or u.get("active") == "failed"
+                                                   or u["unit"] in by_service)]
+        for name, info in zip(units, show_many(units, props, user)):
+            mine, group = owner(name, info)
+            if user and group == "Ubuntu 標準":
+                mine = False
+            kind = "timer" if name in by_service else ("oneshot" if info.get("Type") == "oneshot" else "daemon")
+            lab = {"unit": name.removesuffix(".service"), "manager": manager, "mine": str(mine).lower(),
+                   "group": group, "kind": kind}
+            state = info.get("ActiveState", "")
+            put("raspi_unit_active", lab, int(state in ("active", "activating", "reloading")))
+            put("raspi_unit_failed", lab, int(state == "failed"))
+            put("raspi_unit_restarts_total", lab, num(info.get("NRestarts")) or 0)
+            if num(info.get("MemoryCurrent")) is not None and state != "inactive":
+                put("raspi_unit_memory_bytes", lab, num(info["MemoryCurrent"]))
+            # タイマーから動くものは実行ごとにリセットされるので、累積ではなく前回の値として出す
+            if num(info.get("CPUUsageNSec")) is not None and kind == "daemon":
+                put("raspi_unit_cpu_seconds_total", lab, num(info["CPUUsageNSec"]) / 1e9)
+            since = info.get("ActiveEnterTimestamp", "")
+            if since.startswith("@") and state == "active":
+                put("raspi_unit_start_time_seconds", lab, since[1:])
+            t = by_service.get(name)
+            if t:
+                tlab = dict(lab, timer=t["unit"].removesuffix(".timer"))
+                if t.get("last"):
+                    put("raspi_timer_last_trigger_seconds", tlab, t["last"] / 1e6)
+                    put("raspi_timer_last_success", tlab, int(info.get("Result") == "success" and state != "failed"))
+                    s, e = num(info.get("ExecMainStartTimestampMonotonic")), num(info.get("ExecMainExitTimestampMonotonic"))
+                    if s and e and e >= s:
+                        put("raspi_timer_last_duration_seconds", tlab, (e - s) / 1e6)
+                    if num(info.get("CPUUsageNSec")) is not None:
+                        put("raspi_timer_last_cpu_seconds", tlab, num(info["CPUUsageNSec"]) / 1e9)
+                if t.get("next"):
+                    put("raspi_timer_next_seconds", tlab, t["next"] / 1e6)
+
+    types = {"raspi_unit_restarts_total": "counter", "raspi_unit_cpu_seconds_total": "counter"}
+    text = "".join(f"# TYPE {k} {types.get(k, 'gauge')}\n" + "\n".join(v) + "\n" for k, v in out.items())
+    tmp = OUT + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, OUT)
 
 
 def main():
@@ -291,4 +379,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    metrics() if METRICS else main()

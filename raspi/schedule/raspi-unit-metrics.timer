@@ -1,0 +1,11 @@
+# raspi: Grafana 用のサービス・タイマーの状態を 1 分ごとに更新する
+[Unit]
+Description=Refresh raspi unit metrics every minute
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=1min
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

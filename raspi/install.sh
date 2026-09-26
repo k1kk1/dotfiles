@@ -279,10 +279,11 @@ _ok "raspi-daily-report.timer（毎朝 8 時に過去 24 時間のグラフ）"
 
 sudo install -m 755 "$RASPI_DIR/schedule/raspi-schedule-collect" /usr/local/sbin/raspi-schedule-collect
 sudo install -m 644 "$RASPI_DIR/schedule/raspi-schedule-collect".{service,timer,path} /etc/systemd/system/
+sudo install -m 644 "$RASPI_DIR/schedule/raspi-unit-metrics".{service,timer} /etc/systemd/system/
 sudo install -d -m 755 /var/lib/raspi-schedule
 sudo install -m 644 "$RASPI_DIR/schedule/"{index.html,services.html,app.css,common.js} /var/lib/raspi-schedule/
 sudo systemctl daemon-reload
-sudo systemctl enable --now -q raspi-schedule-collect.timer raspi-schedule-collect.path
+sudo systemctl enable --now -q raspi-schedule-collect.timer raspi-schedule-collect.path raspi-unit-metrics.timer
 sudo systemctl start raspi-schedule-collect.service
 if tailscale serve status 2>/dev/null | grep -q "/schedule/"; then
   _skip "定期実行・常駐ページの公開 (already configured)"
@@ -290,6 +291,14 @@ else
   sudo tailscale serve --bg --https=443 --set-path=/schedule/ /var/lib/raspi-schedule >/dev/null
 fi
 _ok "定期実行・常駐ページ（https://$(tailscale status --json | jq -r .Self.DNSName | sed "s/\\.$//")/schedule/）"
+
+# Grafana の raspi services ダッシュボード（raspi-unit-metrics が書くメトリクスを表示）
+if [[ -d /var/lib/grafana/dashboards ]]; then
+  sudo install -m 644 -o root -g grafana "$RASPI_DIR/monitoring/raspi-services.json" /var/lib/grafana/dashboards/
+  _ok "Grafana: raspi services ダッシュボード"
+else
+  _skip "Grafana が未設定のため raspi services ダッシュボードは入れない"
+fi
 
 mkdir -p "$CONFIG_DIR/raspi-notify" && chmod 700 "$CONFIG_DIR/raspi-notify"
 if [[ -s "$CONFIG_DIR/raspi-notify/discord-webhook" ]]; then

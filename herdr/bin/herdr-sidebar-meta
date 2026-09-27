@@ -8,13 +8,14 @@ workspace / tab / pane / agent / terminal_title(_stripped)）。
 
   Workspace
     $num   Workspace 番号。prefix+shift+1..9 のどれで飛べるかがそのまま出る。
-    $dir   作業ディレクトリ名（末尾のみ）
+    $dir   作業ディレクトリ名（末尾のみ）。Workspace 名と同じなら省く。
     $git   未コミットの数と upstream との差（●3 ↑2↓1）
-    $agents  そこで動いている Agent（claude·codex）
+    $agents  そこの Agent を状態ごとに数えたもの（!1 ▶2 ○1）
     $elapsed いまの状態が続いている時間（4m）
 
   すべての Agent の Pane
     $elapsed いまの状態が続いている時間
+    $num     いる Workspace の番号
     $dir     その Agent の作業ディレクトリ名（末尾のみ）
     $branch  そこの git branch（$dir と同じ名前なら省く）
 
@@ -34,6 +35,7 @@ Pane と rollout の対応は cwd が一致するもののうち一番新しい�
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -47,10 +49,16 @@ CODEX_SESSIONS = os.path.expanduser("~/.codex/sessions")
 ROLLOUT_SCAN_TTL = 10.0
 
 # モデルの読み直し間隔（秒）。/model の切り替えに追随するため。
-MODEL_REFRESH = 60.0
+# 前回読んだ位置から後ろだけを読むので、短くしても重くならない。
+MODEL_REFRESH = 5.0
 
 # git status の実行間隔（秒）。大きいリポジトリでも負担にならない程度に空ける。
 GIT_REFRESH = 5.0
+
+# このスクリプトが報告するトークン。起動し直したとき、前回の残りを消すのに使う。
+WORKSPACE_TOKENS = ["num", "dir", "git", "agents", "elapsed"]
+PANE_TOKENS = ["elapsed", "num", "dir", "branch"]
+CODEX_TOKENS = ["task", "model", "summary"]
 
 # 経過時間を出し始めるまで（秒）。短い作業でチカチカさせないため。
 ELAPSED_MIN = 30
@@ -211,6 +219,10 @@ def git_branch(path):
     return branch
 
 
+# $agents の並びと記号。手が必要なものを先に出す。
+STATUS_MARKS = [("blocked", "!"), ("working", "▶"), ("done", "✓"), ("idle", "○")]
+
+
 def workspace_tokens(snap):
     """workspace_id -> {トークン名: 値}"""
     tokens = {}
@@ -231,21 +243,29 @@ def workspace_tokens(snap):
         pane = next((p for p in panes if p.get("focused")), panes[0]) if panes else None
         path = pane_dir(pane) if pane else ""
         if path:
-            entry["dir"] = dir_label(path)
+            # Workspace 名はたいていディレクトリ名なので、同じなら2行目に任せる。
+            name = dir_label(path)
+            if name != ws.get("label"):
+                entry["dir"] = name
 
             git = git_summary(path)
             if git:
                 entry["git"] = git
 
-        # 何が動いているか。Agent パネルは priority 順で Workspace が混ざるので、
-        # こちら側にも顔ぶれを出しておくと行き来が減る。
-        agents = []
+        # 誰がいるかは Agent パネルで分かるので、ここでは状態ごとの数だけ出す。
+        # 名前を並べると幅が足りずに切れる。
+        counts = {}
         for other in ws_panes:
-            agent = other.get("agent")
-            if agent and agent not in agents:
-                agents.append(agent)
+            if other.get("agent"):
+                status = other.get("agent_status")
+                counts[status] = counts.get(status, 0) + 1
+        agents = [
+            f"{mark}{counts[status]}"
+            for status, mark in STATUS_MARKS
+            if counts.get(status)
+        ]
         if agents:
-            entry["agents"] = "·".join(agents)
+            entry["agents"] = " ".join(agents)
 
         elapsed = elapsed_label("workspace", wid, ws.get("agent_status"))
         if elapsed:
@@ -349,42 +369,133 @@ def model_label(name):
     return str(name).replace("gpt", "GPT")
 
 
-def codex_model(path):
-    """使っているモデル名。
+def payload_model(payload):
+    """モデルを持っている行なら、そのモデル名。
 
-    /model で切り替えると thread_settings_applied が後ろに積まれるので、
-    まず末尾を見る。切り替えていなければ先頭の world_state にしか無い
-    （thread_settings_applied はログの中ほどに埋もれていて、そこまで
-    読むには数十MB舐めることになるので追わない）。
+    /model で切り替えると thread_settings_applied が、ターンごとに
+    turn_context が積まれる。どちらもその時点のモデルを持っている。
     """
-    payloads = list(iter_payloads(read_window(path, TAIL_BYTES, from_end=True)))
-    for payload in reversed(payloads):
-        settings = payload.get("thread_settings")
-        if isinstance(settings, dict) and settings.get("model"):
-            return model_label(settings["model"])
+    settings = payload.get("thread_settings")
+    if isinstance(settings, dict) and settings.get("model"):
+        return settings["model"]
+    if "turn_id" in payload and isinstance(payload.get("model"), str):
+        return payload["model"]
+    return None
 
+
+def codex_initial_model(path):
+    """セッション開始時のモデル。先頭の world_state にある。"""
     for payload in iter_payloads(read_window(path, HEAD_BYTES, from_end=False)):
         state = payload.get("state")
         if not isinstance(state, dict):
             continue
         mode = state.get("collaboration_mode")
         if isinstance(mode, dict) and mode.get("model"):
-            return model_label(mode["model"])
+            return mode["model"]
     return None
 
 
-def codex_task(path):
-    """最初のユーザー指示。Claude がタイトルに出しているものに相当する。"""
-    for payload in iter_payloads(read_window(path, HEAD_BYTES, from_end=False)):
+def read_lines(path, offset, limit):
+    """offset から最大 limit バイトぶんの、改行で終わっている行と次の読み始め位置。
+
+    書きかけの最終行は次回に回す。1行が limit より長いときは、その行の終わりまで読む。
+    """
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            size = fh.tell()
+            if offset > size:
+                offset = 0  # 作り直された
+            fh.seek(offset)
+            data = fh.read(limit)
+            while b"\n" not in data and offset + len(data) < size:
+                more = fh.read(limit)
+                if not more:
+                    break
+                data += more
+    except OSError:
+        return [], offset
+
+    cut = data.rfind(b"\n")
+    if cut < 0:
+        return [], offset
+    return data[:cut].decode("utf-8", "replace").splitlines(), offset + cut + 1
+
+
+def codex_last_model(path):
+    """ログの後ろから遡って、最後に出てきたモデル。
+
+    切り替えやターンの行は長いツール出力に挟まれて、末尾から数十MB前に
+    あることもある。後ろから少しずつ読み、見つかったところでやめる。
+    """
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            pos = fh.tell()
+            carry = b""
+            while pos > 0:
+                start = max(0, pos - TAIL_BYTES)
+                fh.seek(start)
+                lines = (fh.read(pos - start) + carry).split(b"\n")
+                # 先頭は前のチャンクとつながっているので、次に回す。
+                carry = lines.pop(0) if start else b""
+                for raw in reversed(lines):
+                    if b'"model"' not in raw:
+                        continue
+                    for payload in iter_payloads([raw.decode("utf-8", "replace")]):
+                        model = payload_model(payload)
+                        if model:
+                            return model
+                pos = start
+    except OSError:
+        pass
+    return None
+
+
+def codex_model_since(path, offset):
+    """offset から後ろに出てきた最後のモデルと、次に読み始める位置。
+
+    毎回末尾だけ見ると、切り替えたあとに長いツール出力が続いたとき
+    切り替えの行が窓から押し出されて、開始時のモデルに戻ってしまう。
+    初回だけ後ろから遡って探し、あとは読んだ位置から増えたぶんだけ読む。
+    """
+    if not offset:
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            return None, offset
+        # 末尾が書きかけの行でも、次回その続きから読んだ切れ端は JSON にならず捨てられる。
+        return codex_last_model(path), size
+
+    lines, offset = read_lines(path, offset, TAIL_BYTES * 64)
+    model = None
+    for payload in iter_payloads(lines):
+        model = payload_model(payload) or model
+    return model, offset
+
+
+IMAGE_PLACEHOLDER = re.compile(r"\[Image #\d+\]")
+
+
+def codex_task(path, offset):
+    """最初のユーザー指示と、見つからなかったときに次に読み始める位置。
+    Claude がタイトルに出しているものに相当する。
+
+    画像を貼ると本文に [Image #1] が入るので取り除く。画像だけの指示なら
+    手がかりにならないので、次の指示を使う。次の指示はツール出力の後ろで
+    ずっと先にあることもあるので、一度に読み切らず少しずつ先へ進む。
+    """
+    lines, offset = read_lines(path, offset, HEAD_BYTES)
+    for payload in iter_payloads(lines):
         item = payload.get("item")
         if not isinstance(item, dict) or item.get("type") != "UserMessage":
             continue
         for part in item.get("content", []):
             if isinstance(part, dict) and part.get("type") == "text":
-                text = part.get("text", "").strip()
+                text = IMAGE_PLACEHOLDER.sub("", part.get("text", "")).strip()
                 if text:
-                    return shorten(text)
-    return None
+                    return shorten(text), offset
+    return None, offset
 
 
 def codex_summary(path):
@@ -462,13 +573,26 @@ class CodexReader:
         entry = self.static.get(path)
         now = time.monotonic()
         if entry is None:
-            # 最初の指示は変わらないので、一度読んだら使い回す。
-            entry = {"task": codex_task(path), "model": None, "model_at": 0.0}
+            entry = {
+                "task": None,
+                "task_offset": 0,
+                "model": None,
+                "model_at": 0.0,
+                "offset": 0,
+            }
             self.static[path] = entry
         if now - entry["model_at"] > MODEL_REFRESH:
-            # モデルは /model で変わりうるので、たまに見直す。
-            entry["model"] = codex_model(path)
+            # モデルは /model で変わりうるので、増えたぶんを見て追随する。
+            model, entry["offset"] = codex_model_since(path, entry["offset"])
+            if model:
+                entry["model"] = model_label(model)
+            elif entry["model"] is None:
+                initial = codex_initial_model(path)
+                entry["model"] = model_label(initial) if initial else None
             entry["model_at"] = now
+            if entry["task"] is None:
+                # 画像だけの指示しかまだ無いなら、続きを読んで次の指示を探す。
+                entry["task"], entry["task_offset"] = codex_task(path, entry["task_offset"])
 
         tokens = {}
         if entry["task"]:
@@ -507,7 +631,9 @@ def main():
                 continue
             # commit して git が空になった、のように消えた値は明示的に消す。
             # 報告は指定したトークンを上書きするだけで、触れなかったものは残る。
-            clear = [name for name in (previous or {}) if name not in entry]
+            # 初回は前回の起動で送ったものが残っているかもしれないので、全部が対象。
+            known = WORKSPACE_TOKENS if previous is None else previous
+            clear = [name for name in known if name not in entry]
             report("workspace", wid, tokens=entry.items(), clear=clear)
             last_ws[wid] = entry
         for wid in list(last_ws):
@@ -521,6 +647,12 @@ def main():
         except Exception:
             mapping = {}
 
+        numbers = {
+            ws["workspace_id"]: str(ws["number"])
+            for ws in snap.get("workspaces", [])
+            if ws.get("number") is not None
+        }
+
         seen = set()
         for pane in agent_panes:
             pane_id = pane["pane_id"]
@@ -530,6 +662,11 @@ def main():
             elapsed = elapsed_label("pane", pane_id, pane.get("agent_status"))
             if elapsed:
                 entry["elapsed"] = elapsed
+
+            # priority 並びだと Workspace が混ざるので、prefix+shift+N の N を出す。
+            number = numbers.get(pane.get("workspace_id"))
+            if number:
+                entry["num"] = number
 
             # 同じ Workspace に Agent が並ぶと Workspace 名では見分けが付かないので、
             # Agent ごとの居場所を出す。worktree で分けていれば branch で区別できる。
@@ -552,9 +689,13 @@ def main():
                     if summary:
                         entry["summary"] = summary
 
-            previous = last_pane.get(pane_id, {})
+            previous = last_pane.get(pane_id)
             if previous == entry:
                 continue
+            if previous is None:
+                # 前回の起動で送ったものが残っているかもしれないので、自分の分は全部が対象。
+                # Claude の $summary / $model は herdr-agent-meta のものなので触らない。
+                previous = PANE_TOKENS + (CODEX_TOKENS if pane.get("agent") == "codex" else [])
 
             # TTL は付けない。値が変わらない間は報告しないので、TTL を付けると
             # 長く同じ作業をしているときに表示だけ消えてしまう。

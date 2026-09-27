@@ -94,37 +94,45 @@ Herdr の行トークンは組み込みが少ないので、足りないもの�
 外から流し込んでいる（`$` 付きがそれ）。
 
 ```text
-1 ● dotfiles · main · ●7        番号($num) / 状態 / ディレクトリ($dir) / branch / git($git)
+1 ● raycast · main · ●7         番号($num) / 状態 / ディレクトリ($dir) / branch / git($git)
   Herdr pane manager プラグイン    Workspace 名（長いので1行使う）
-  working · 4m · claude·codex   状態 / 経過時間($elapsed) / 顔ぶれ($agents)
+  working · 4m · !1 ▶2 ○1       状態 / 経過時間($elapsed) / Agent の状態別の数($agents)
 
-● claude · working · 4m         Agent / 状態 / 経過時間
+● claude · working · 4m         Agent（太字） / 状態 / 経過時間
   Herdr ワークスペース表示          タイトル
   Edit config.toml              いま走っているツール($summary)
-  Opus 5                        モデル($model)
-  dotfiles · sidebar-dir        作業ディレクトリ($dir) / branch($branch)
+  Opus 5.5                      モデル($model)
+  2 · dotfiles · sidebar-dir    Workspace 番号($num) / 作業ディレクトリ($dir) / branch($branch)
 
 ● codex · working · 12m
   alfredでチートシートを…           最初の指示($task)
   Bash npm run build
-  GPT-5.6-terra
-  herdr-sessions · main
+  GPT-6-sol
+  1 · herdr-sessions · main
 ```
 
 Claude と Codex で同じ並びにしてある。タイトル行だけ出どころが違い、
 Claude はセッションのタイトル、Codex は最初の指示（`$task`）を出す
 （Codex はターミナルタイトルに作業ディレクトリ名しか出さないため）。
 
-最終行は Workspace 名ではなく、その Agent 自身の作業ディレクトリと branch。
+最終行は Workspace 名ではなく、Workspace 番号とその Agent 自身の作業ディレクトリ・branch。
 同じ Workspace に Agent を並べると Workspace 名は全員同じになるため。
+番号は `prefix+shift+N` の N なので、そのまま飛べる。
 branch はディレクトリ名と同じとき（worktree によくある）は省く。
+
+Workspace の `$dir` は Workspace 名と同じなら出さない（2行目と重複するため）。
+`$agents` の記号は `!` blocked / `▶` working / `✓` done / `○` idle。
+
+Codex の `$task` は、画像だけの指示（`[Image #1]`）なら次の指示を使う。
+`$model` は `/model` の切り替えに5秒ほどで追随する。Claude の `$model` は
+`/model` のあと次のプロンプトを送ったとき、または応答が終わったときに変わる。
 
 `$git` は未コミット数（untracked 含む）と upstream との差で、`●7 ↑2↓1` の形。
 `$elapsed` はその状態が続いている時間で、30秒未満は出さない。
 
 | トークン | 出どころ |
 | --- | --- |
-| `$num` `$dir` `$git` `$elapsed` `$agents`、Agent の `$dir` `$branch` | `herdr/bin/herdr-sidebar-meta`（LaunchAgent で常駐、2秒ごと） |
+| `$num` `$dir` `$git` `$elapsed` `$agents`、Agent の `$num` `$dir` `$branch` | `herdr/bin/herdr-sidebar-meta`（LaunchAgent で常駐、2秒ごと） |
 | `$task` `$summary` `$model`（Codex） | 同上。`~/.codex/sessions` の rollout ログから拾う |
 | `$summary` `$model`（Claude） | `herdr/bin/herdr-agent-meta`（Claude Code の hooks から呼ばれる） |
 

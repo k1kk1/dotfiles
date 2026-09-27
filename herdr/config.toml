@@ -207,11 +207,12 @@ copy_on_select = true
 # （LaunchAgent dev.herdr.sidebar-meta として常駐）。
 #
 #   $num      Workspace 番号。prefix+shift+1..9 のどれで飛べるかがそのまま出る。
-#   $dir      作業ディレクトリ名（末尾のみ）
+#   $dir      作業ディレクトリ名（末尾のみ）。Workspace 名と同じなら出さない
+#             （2行目と重複して、1行目の branch や git が押し出されるため）。
 #   $git      未コミットの数と upstream との差（●3 ↑2↓1）
 #   $elapsed  いまの状態が続いている時間。止まっている Agent に気付くため。
-#   $agents   そこで動いている Agent。priority 並びだと Agent パネル側は
-#             Workspace が混ざるので、こちらにも顔ぶれを出しておく。
+#   $agents   そこの Agent を状態ごとに数えたもの（!1 ▶2 ○1 = blocked /
+#             working / idle）。名前は Agent パネルで分かるし、並べると切れる。
 #
 # 色は Catppuccin Mocha。dim は既定より暗くて読めないので使わない。
 #   #89b4fa blue     $num（番号は目印なので少し目立たせる）
@@ -241,29 +242,40 @@ rows = [
 # Agent名と状態 / タイトル / いま走っているツール / モデル / 居場所。
 # 横に長いものは1行ずつ使う。項目が増えたので row_gap で Agent 同士を離す。
 #
-# $summary $model $task $dir $branch は pane metadata として外から流し込む値。
+# $summary $model $task $num $dir $branch は pane metadata として外から流し込む値。
 #   Claude  hooks から herdr/bin/herdr-agent-meta が報告
 #   Codex   herdr/bin/herdr-sidebar-meta が ~/.codex/sessions のログから拾う
 #
 # pane は名前を付けていない限り空、tab は "Active Agents" のような自動名で
 # 手がかりにならないので出さない。workspace も、同じ Workspace に Agent を
 # 並べると全員同じ名前になって見分けが付かないので出さない。
-# 居場所としては Agent ごとの作業ディレクトリ($dir)と branch($branch)を出す。
-# どちらも herdr/bin/herdr-sidebar-meta が Pane ごとに報告する。
+# 居場所としては Workspace 番号($num)と、Agent ごとの作業ディレクトリ($dir)・
+# branch($branch)を出す。番号があれば prefix+shift+N でそのまま飛べる。
+# どれも herdr/bin/herdr-sidebar-meta が Pane ごとに報告する。
 #
 # 色は spaces と同じ Catppuccin Mocha。
-#   #cdd6f4 text     タイトル（既定では暗くて読めない）
+#   #cdd6f4 text     Agent 名（bold）とタイトル（既定では暗くて読めない）
+#   #89b4fa blue     $num
 #   #89b4fa blue     $summary（いま動いているもの）
 #   #a6adc8 subtext0 $model / $dir
 #   #cba6f7 mauve    $branch（worktree の見分けに使うので少し目立たせる）
 row_gap = 1
 
 rows = [
-  ["state_icon", "agent", "state_text", { token = "$elapsed", fg = "#6c7086" }],
+  [
+    "state_icon",
+    { token = "agent", fg = "#cdd6f4", bold = true, dim = false },
+    "state_text",
+    { token = "$elapsed", fg = "#6c7086" },
+  ],
   [{ token = "terminal_title_stripped", fg = "#cdd6f4", dim = false }],
   [{ token = "$summary", fg = "#89b4fa" }],
   [{ token = "$model", fg = "#a6adc8" }],
-  [{ token = "$dir", fg = "#a6adc8" }, { token = "$branch", fg = "#cba6f7" }],
+  [
+    { token = "$num", fg = "#89b4fa" },
+    { token = "$dir", fg = "#a6adc8" },
+    { token = "$branch", fg = "#cba6f7" },
+  ],
 ]
 
 # Codex はターミナルタイトルに作業ディレクトリ名しか出さないので、
@@ -273,11 +285,20 @@ rows = [
 [ui.sidebar.agents.rows_by_agent]
 
 codex = [
-  ["state_icon", "agent", "state_text", { token = "$elapsed", fg = "#6c7086" }],
+  [
+    "state_icon",
+    { token = "agent", fg = "#cdd6f4", bold = true, dim = false },
+    "state_text",
+    { token = "$elapsed", fg = "#6c7086" },
+  ],
   [{ token = "$task", fg = "#cdd6f4", dim = false }],
   [{ token = "$summary", fg = "#89b4fa" }],
   [{ token = "$model", fg = "#a6adc8" }],
-  [{ token = "$dir", fg = "#a6adc8" }, { token = "$branch", fg = "#cba6f7" }],
+  [
+    { token = "$num", fg = "#89b4fa" },
+    { token = "$dir", fg = "#a6adc8" },
+    { token = "$branch", fg = "#cba6f7" },
+  ],
 ]
 
 # ==============================================================================

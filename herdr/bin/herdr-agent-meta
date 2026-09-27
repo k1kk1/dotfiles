@@ -17,6 +17,7 @@ hooks は Claude 本体の応答をブロックするので、失敗しても黙
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -26,12 +27,11 @@ SOURCE = "claude-agent-meta"
 # Stop で消しているが、消し損ねたぶんは TTL で自然に消えるようにしておく。
 SUMMARY_TTL_MS = 900_000
 
-MODEL_NAMES = {
-    "claude-opus-5": "Opus 5",
-    "claude-sonnet-5": "Sonnet 5",
-    "claude-fable-5": "Fable 5",
-    "claude-haiku-4-5": "Haiku 4.5",
-}
+# claude-opus-5-5 / claude-haiku-4-5-20251001 / claude-opus-5[1m] など。
+MODEL_ID = re.compile(r"^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?(?:\[.*\])?$")
+
+# /model を実行すると transcript に残る行。まだ応答が無くても切り替え先が分かる。
+MODEL_SWITCH = re.compile(r"<local-command-stdout>Set model to `([^`]+)`")
 
 
 def report(pane_id, tokens=(), clear=(), ttl_ms=None):
@@ -45,10 +45,21 @@ def report(pane_id, tokens=(), clear=(), ttl_ms=None):
     subprocess.run(args, capture_output=True, text=True, timeout=5)
 
 
+def model_name(model_id):
+    """claude-opus-5-5 -> Opus 5.5。形が違うものはそのまま返す。"""
+    match = MODEL_ID.match(model_id)
+    if not match:
+        return model_id
+    family, major, minor = match.groups()
+    version = f"{major}.{minor}" if minor else major
+    return f"{family.capitalize()} {version}"
+
+
 def model_label(transcript_path):
-    """transcript の末尾から、直近に応答したモデルを拾う。
+    """transcript の末尾から、いまのモデルを拾う。
 
     hooks の入力にモデルは含まれないので、会話ログを後ろから見るのが確実。
+    直近の応答のモデルか、それより後に /model で切り替えていればその切り替え先。
     最後の数行だけ見れば足りる。
     """
     if not transcript_path or not os.path.exists(transcript_path):
@@ -69,16 +80,22 @@ def model_label(transcript_path):
         except ValueError:
             continue
         message = entry.get("message")
-        if entry.get("type") != "assistant" or not isinstance(message, dict):
+        if not isinstance(message, dict):
+            continue
+
+        if entry.get("type") == "user" and isinstance(message.get("content"), str):
+            # 表示名がそのまま入っている（Opus 5.5 (1M context) など）。括弧は落とす。
+            switched = MODEL_SWITCH.search(message["content"])
+            if switched:
+                return switched.group(1).split(" (")[0]
+            continue
+
+        if entry.get("type") != "assistant":
             continue
         model = message.get("model")
-        if not model:
-            continue
-        # 日付サフィックス付き（claude-haiku-4-5-20251001）も同じ名前に寄せる。
-        for key, label in MODEL_NAMES.items():
-            if model.startswith(key):
-                return label
-        return model
+        # <synthetic> はエラー時などに Claude Code が差し込む行で、モデルではない。
+        if model and not model.startswith("<"):
+            return model_name(model)
     return None
 
 
@@ -132,19 +149,19 @@ def main():
 
     event = payload.get("hook_event_name")
 
-    if event in ("SessionStart", "UserPromptSubmit"):
-        # モデルは /model でいつでも変わるので、プロンプトごとに追随する。
+    if event in ("SessionStart", "UserPromptSubmit", "Stop"):
+        # モデルは /model でいつでも変わるので、プロンプトごとと応答の終わりに追随する。
         label = model_label(payload.get("transcript_path"))
         if label:
             report(pane_id, tokens=[("model", label)])
         if event == "UserPromptSubmit":
             report(pane_id, tokens=[("summary", "考え中")], ttl_ms=SUMMARY_TTL_MS)
 
-    elif event == "PreToolUse":
+    if event == "PreToolUse":
         summary = tool_summary(payload.get("tool_name", ""), payload.get("tool_input"))
         report(pane_id, tokens=[("summary", summary)], ttl_ms=SUMMARY_TTL_MS)
 
-    elif event in ("Stop", "SessionEnd"):
+    if event in ("Stop", "SessionEnd"):
         report(pane_id, clear=["summary"])
 
 

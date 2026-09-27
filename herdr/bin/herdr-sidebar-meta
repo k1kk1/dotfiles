@@ -15,6 +15,8 @@ workspace / tab / pane / agent / terminal_title(_stripped)）。
 
   すべての Agent の Pane
     $elapsed いまの状態が続いている時間
+    $dir     その Agent の作業ディレクトリ名（末尾のみ）
+    $branch  そこの git branch（$dir と同じ名前なら省く）
 
   Codex の Pane
     $task     そのセッションの最初の指示（Claude のタイトル行に相当）
@@ -177,6 +179,38 @@ def git_summary(path):
     return text
 
 
+def dir_label(path):
+    """パスの末尾。~ 直下やルートは basename が空・紛らわしいので、そのまま出す。"""
+    if path == os.path.expanduser("~"):
+        return "~"
+    return os.path.basename(path.rstrip("/")) or path
+
+
+_branch_cache = {}  # dir -> (時刻, branch)
+
+
+def git_branch(path):
+    """いまの branch 名。git 管理外や detached HEAD なら空。"""
+    now = time.monotonic()
+    cached = _branch_cache.get(path)
+    if cached and now - cached[0] < GIT_REFRESH:
+        return cached[1]
+
+    try:
+        out = subprocess.run(
+            ["git", "-C", path, "symbolic-ref", "--quiet", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        branch = out.stdout.strip() if out.returncode == 0 else ""
+    except (OSError, subprocess.SubprocessError):
+        branch = ""
+
+    _branch_cache[path] = (now, branch)
+    return branch
+
+
 def workspace_tokens(snap):
     """workspace_id -> {トークン名: 値}"""
     tokens = {}
@@ -197,13 +231,7 @@ def workspace_tokens(snap):
         pane = next((p for p in panes if p.get("focused")), panes[0]) if panes else None
         path = pane_dir(pane) if pane else ""
         if path:
-            # ~ 直下やルートは basename が空・紛らわしいので、その場合はパスを縮めて出す。
-            name = os.path.basename(path.rstrip("/"))
-            if not name:
-                name = path
-            elif path == os.path.expanduser("~"):
-                name = "~"
-            entry["dir"] = name
+            entry["dir"] = dir_label(path)
 
             git = git_summary(path)
             if git:
@@ -502,6 +530,16 @@ def main():
             elapsed = elapsed_label("pane", pane_id, pane.get("agent_status"))
             if elapsed:
                 entry["elapsed"] = elapsed
+
+            # 同じ Workspace に Agent が並ぶと Workspace 名では見分けが付かないので、
+            # Agent ごとの居場所を出す。worktree で分けていれば branch で区別できる。
+            path = pane_dir(pane)
+            if path:
+                entry["dir"] = dir_label(path)
+                branch = git_branch(path)
+                # worktree はディレクトリ名 = branch 名になりがちなので、重複は省く。
+                if branch and branch != entry["dir"]:
+                    entry["branch"] = branch
 
             # Codex には hooks が無いので、$task / $model / $summary はログから作る。
             # Claude のぶんは herdr-agent-meta が hooks から報告するので触らない。

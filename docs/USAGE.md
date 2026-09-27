@@ -102,25 +102,29 @@ Herdr の行トークンは組み込みが少ないので、足りないもの�
   Herdr ワークスペース表示          タイトル
   Edit config.toml              いま走っているツール($summary)
   Opus 5                        モデル($model)
-  dotfiles                      Workspace
+  dotfiles · sidebar-dir        作業ディレクトリ($dir) / branch($branch)
 
 ● codex · working · 12m
   alfredでチートシートを…           最初の指示($task)
   Bash npm run build
   GPT-5.6-terra
-  raycast 拡張
+  herdr-sessions · main
 ```
 
 Claude と Codex で同じ並びにしてある。タイトル行だけ出どころが違い、
 Claude はセッションのタイトル、Codex は最初の指示（`$task`）を出す
 （Codex はターミナルタイトルに作業ディレクトリ名しか出さないため）。
 
+最終行は Workspace 名ではなく、その Agent 自身の作業ディレクトリと branch。
+同じ Workspace に Agent を並べると Workspace 名は全員同じになるため。
+branch はディレクトリ名と同じとき（worktree によくある）は省く。
+
 `$git` は未コミット数（untracked 含む）と upstream との差で、`●7 ↑2↓1` の形。
 `$elapsed` はその状態が続いている時間で、30秒未満は出さない。
 
 | トークン | 出どころ |
 | --- | --- |
-| `$num` `$dir` `$git` `$elapsed` `$agents` | `herdr/bin/herdr-sidebar-meta`（LaunchAgent で常駐、2秒ごと） |
+| `$num` `$dir` `$git` `$elapsed` `$agents`、Agent の `$dir` `$branch` | `herdr/bin/herdr-sidebar-meta`（LaunchAgent で常駐、2秒ごと） |
 | `$task` `$summary` `$model`（Codex） | 同上。`~/.codex/sessions` の rollout ログから拾う |
 | `$summary` `$model`（Claude） | `herdr/bin/herdr-agent-meta`（Claude Code の hooks から呼ばれる） |
 

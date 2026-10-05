@@ -1,0 +1,32 @@
+# raspi: アプリ別の CPU・メモリを集めるためのグループ分け
+#
+# 上から順に判定し、最初に当たったグループに入る。
+# 当たったプロセスから起動された子プロセス（Agent が実行したテストなど）は、
+# 自分のグループを持たない限り親と同じグループに入る。
+process_names:
+  - name: claude
+    cmdline: ['(^|/)claude( |$)']
+  - name: codex
+    cmdline: ['(^|/)codex( |$)']
+  - name: vscode
+    cmdline: ['\.vscode-server']
+  - name: ollama
+    comm: [ollama]
+  - name: herdr
+    cmdline: ['(^|/)herdr']
+  - name: even-terminal
+    cmdline: ['even-terminal']
+  - name: monitoring
+    comm: [grafana, prometheus, prometheus-node, prometheus-proc]
+  - name: monitoring
+    cmdline: ['gpx_grafana']
+  - name: tailscale
+    comm: [tailscaled]
+  - name: build
+    comm: [cargo, rustc, cc, cc1, cc1plus, gcc, ld, make]
+  - name: node
+    comm: [node]
+  - name: shell
+    comm: [zsh, bash, sh, sshd, sshd-session]
+  - name: other
+    cmdline: ['.*']

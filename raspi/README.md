@@ -24,6 +24,8 @@ Raspberry Pi 5（Ubuntu 26.04 / arm64、ホスト名 `raspi`）用の dotfiles�
 | `raspi/report/` → `/usr/local/bin`・systemd | 毎朝 8 時に過去 24 時間の CPU・メモリ・温度・ディスクのグラフを送る（`raspi-daily-report`） |
 | `raspi/schedule/` → `/usr/local/sbin`・`/var/lib/raspi-schedule`・systemd | 定期実行・常駐サービスのページ。10 分ごととユニット追加時に `data.json` を作り、tailscale serve の `/schedule/` で公開。ユーザーサービス（`systemctl --user`）も対象。`--metrics` で 1 分ごとに node_exporter の textfile にも書く（`raspi-unit-metrics.timer`） |
 | `raspi/monitoring/raspi-services.json` → `/var/lib/grafana/dashboards` | Grafana の raspi services ダッシュボード |
+| `raspi/terminal/even-terminal.service` → `/etc/systemd/system` | Even Terminal の初回設定がある場合に自動起動し、異常終了時に再起動。起動スケジュール画面と Grafana のサービス監視が自動で拾う |
+| `raspi/monitoring/process-exporter.yml` → `/etc/prometheus` | Even Terminal を独立したプロセスグループに分類し、既存 Grafana アプリ別 CPU・メモリ表示へ反映 |
 | `raspi/bin/raspi-hc` → `/usr/local/bin` | Healthchecks.io への連絡（死活監視とバックアップの見張り）。ping key は `~/.config/raspi-notify/healthchecks-ping-key`（リポジトリ外） |
 | `raspi/claude/CLAUDE.md` → `~/.claude/` | Claude Code への Pi の前提と進め方 |
 | `raspi/claude/settings.json` | 許可・確認・禁止するコマンドと通知の hooks。`~/.claude/settings.json` に足し込む（リンクしない） |

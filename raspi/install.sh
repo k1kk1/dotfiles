@@ -284,6 +284,30 @@ sudo install -d -m 755 /var/lib/raspi-schedule
 sudo install -m 644 "$RASPI_DIR/schedule/"{index.html,services.html,app.css,common.js} /var/lib/raspi-schedule/
 sudo systemctl daemon-reload
 sudo systemctl enable --now -q raspi-schedule-collect.timer raspi-schedule-collect.path raspi-unit-metrics.timer
+
+# Even Terminal is optional. Once its first-run configuration exists, run it as
+# a boot service; the schedule collector and Grafana already discover units
+# dynamically. Do not put its pairing QR/token in the system journal.
+if [[ -x "$HOME/.npm-global/bin/even-terminal" && -s "$HOME/.even-terminal/config.json" ]]; then
+  even_terminal_unit_changed=0
+  if ! cmp -s "$RASPI_DIR/terminal/even-terminal.service" /etc/systemd/system/even-terminal.service; then
+    sudo install -m 644 "$RASPI_DIR/terminal/even-terminal.service" /etc/systemd/system/even-terminal.service
+    even_terminal_unit_changed=1
+  fi
+  sudo systemctl daemon-reload
+  sudo systemctl enable even-terminal.service
+  if systemctl is-active --quiet even-terminal.service; then
+    if (( even_terminal_unit_changed )); then
+      sudo systemctl restart even-terminal.service
+    fi
+  else
+    sudo systemctl start even-terminal.service
+  fi
+  _ok "Even Terminal（起動時に自動起動、異常終了時に再起動）"
+else
+  _skip "Even Terminal（CLI と初回設定が必要）"
+fi
+
 sudo systemctl start raspi-schedule-collect.service
 if tailscale serve status 2>/dev/null | grep -q "/schedule/"; then
   _skip "定期実行・常駐ページの公開 (already configured)"
@@ -298,6 +322,18 @@ if [[ -d /var/lib/grafana/dashboards ]]; then
   _ok "Grafana: raspi services ダッシュボード"
 else
   _skip "Grafana が未設定のため raspi services ダッシュボードは入れない"
+fi
+
+# Give Even Terminal its own process-exporter group so the existing Grafana
+# app CPU/memory panels show it separately from unrelated Node.js processes.
+if [[ -f /etc/prometheus/process-exporter.yml ]] && systemctl cat prometheus-process-exporter.service &>/dev/null; then
+  if ! cmp -s "$RASPI_DIR/monitoring/process-exporter.yml" /etc/prometheus/process-exporter.yml; then
+    sudo install -m 644 "$RASPI_DIR/monitoring/process-exporter.yml" /etc/prometheus/process-exporter.yml
+    sudo systemctl restart prometheus-process-exporter.service
+    _ok "Prometheus process-exporter: even-terminal グループ"
+  else
+    _skip "Prometheus process-exporter 設定"
+  fi
 fi
 
 mkdir -p "$CONFIG_DIR/raspi-notify" && chmod 700 "$CONFIG_DIR/raspi-notify"

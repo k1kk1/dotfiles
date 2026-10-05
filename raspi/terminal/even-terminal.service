@@ -1,0 +1,21 @@
+[Unit]
+Description=Even Terminal for Even Realities G2
+After=network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
+
+[Service]
+Type=simple
+User=kikki
+Environment=HOME=/home/kikki
+Environment=PATH=/home/kikki/.npm-global/bin:/home/kikki/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+WorkingDirectory=/home/kikki
+ExecStart=/home/kikki/.npm-global/bin/even-terminal --log-level info
+Restart=always
+RestartSec=10s
+TimeoutStopSec=20s
+StandardOutput=null
+StandardError=journal
+SyslogIdentifier=even-terminal
+
+[Install]
+WantedBy=multi-user.target

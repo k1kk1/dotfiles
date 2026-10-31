@@ -6,6 +6,8 @@ workspace / branch / git_status、Agent は state_icon / state_text /
 workspace / tab / pane / agent / terminal_title(_stripped)）。
 足りないものは metadata として外から報告する仕組みがあるので、ここで作る。
 
+すべての Pane の境界名を作業ディレクトリ名に追随させる。手動名は上書きしない。
+
   Workspace
     $num   Workspace 番号。prefix+shift+1..9 のどれで飛べるかがそのまま出る。
     $dir   作業ディレクトリ名（末尾のみ）。Workspace 名と同じなら省く。
@@ -100,6 +102,43 @@ def report(kind, target_id, tokens=(), clear=(), ttl_ms=None):
 
 def pane_dir(pane):
     return pane.get("foreground_cwd") or pane.get("cwd") or ""
+
+
+AUTO_LABEL_TOKEN = "auto_directory_label"
+
+
+def update_pane_labels(panes):
+    """無名または自動命名の Pane だけ cwd に追随。手動名は保持する。
+
+    前回の自動名を metadata に残すので、監視プロセスの再起動や
+    Pane の移動でも自動名と手動名を区別できる。
+    """
+    for pane in panes:
+        path = pane_dir(pane)
+        if not path:
+            continue
+        label = pane.get("label") or ""
+        auto_label = (pane.get("tokens") or {}).get(AUTO_LABEL_TOKEN)
+        if label and label != auto_label:
+            continue
+        desired = dir_label(path)
+        if label == desired and auto_label == desired:
+            continue
+        try:
+            result = subprocess.run(
+                ["herdr", "pane", "rename", pane["pane_id"], desired],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0:
+                subprocess.run(
+                    ["herdr", "pane", "report-metadata", pane["pane_id"],
+                     "--source", "pane-directory-label", "--token",
+                     f"{AUTO_LABEL_TOKEN}={desired}"],
+                    capture_output=True, text=True, timeout=10,
+                )
+        except subprocess.TimeoutExpired:
+            # 一時的な失敗は次の監視周期で再試行する。
+            continue
 
 
 # (種別, id) -> (状態, その状態になった時刻)
@@ -623,6 +662,8 @@ def main():
             last_pane.clear()
             time.sleep(INTERVAL)
             continue
+
+        update_pane_labels(snap.get("panes", []))
 
         current_ws = workspace_tokens(snap)
         for wid, entry in current_ws.items():

@@ -32,7 +32,7 @@ _brew_install() {
   fi
 }
 
-for pkg in fzf fd bat eza ripgrep jq yq direnv zoxide starship tmux herdr lazygit; do
+for pkg in fzf fd bat eza ripgrep jq yq direnv zoxide starship tmux herdr lazygit mise neovim; do
   _brew_install "$pkg"
 done
 

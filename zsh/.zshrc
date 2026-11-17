@@ -316,6 +316,11 @@ eval "$(starship init zsh)"
 
 
 # ==============================================================================
-# Node.js
+# Node.js など — mise
 # ==============================================================================
-export N_PREFIX=$HOME/.n
+#
+# グローバル設定: ~/.config/mise/config.toml（mise use --global node@latest）
+
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi

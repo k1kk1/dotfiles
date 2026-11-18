@@ -28,3 +28,11 @@
 [user]
 	email = kikkidev64@gmail.com
 	name = kikkidev64
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[fetch]
+	prune = true

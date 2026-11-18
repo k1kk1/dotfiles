@@ -99,6 +99,14 @@ _symlink "$DOTFILES_DIR/vim"                 "$HOME/.vim"
 _symlink "$DOTFILES_DIR/vim"                 "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 _symlink "$DOTFILES_DIR/vim/init.vim"        "$HOME/.vimrc"
 
+# マシン固有の設定は git 管理外。無いときだけ雛形をコピーする（上書きしない）。
+if [[ -e "$HOME/.zshrc.local" ]]; then
+  _skip "~/.zshrc.local (already exists)"
+else
+  cp "$DOTFILES_DIR/zsh/.zshrc.local.example" "$HOME/.zshrc.local"
+  _ok "~/.zshrc.local を雛形から作成"
+fi
+
 # ------------------------------------------------------------------------------
 # 4. Herdr プラグイン
 # ------------------------------------------------------------------------------

@@ -1,0 +1,5 @@
+# ~/.zshrc.local — マシン固有の設定（git 管理外）
+# .zshrc の最後に読み込まれる。不要な行は消してよい。
+
+# Docker — OrbStack
+[[ -d /Applications/OrbStack.app/Contents/MacOS/xbin ]] && path+=(/Applications/OrbStack.app/Contents/MacOS/xbin)

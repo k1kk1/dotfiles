@@ -324,3 +324,12 @@ eval "$(starship init zsh)"
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate zsh)"
 fi
+
+# ==============================================================================
+# マシン固有の設定 — ~/.zshrc.local（git 管理外）
+# ==============================================================================
+#
+# PATH などマシンごとに違う設定はここに書く。
+# 雛形: zsh/.zshrc.local.example（install.sh が無いときだけコピーする）
+
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

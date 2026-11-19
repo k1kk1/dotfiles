@@ -312,6 +312,20 @@ add-zsh-hook precmd _update_window_title
 
 export STARSHIP_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml"
 
+# ホスト名を上段右端に表示し、機種に合わせて色を選ぶ。
+unset STARSHIP_HOST_RASPI STARSHIP_HOST_MINI STARSHIP_HOST_DEFAULT
+_starship_host="$(hostname -s)"
+_starship_identity="$_starship_host"
+if [[ "$OSTYPE" == darwin* ]]; then
+  _starship_identity+=" $(/usr/sbin/scutil --get LocalHostName 2>/dev/null)"
+fi
+case "${_starship_identity:l}" in
+  *raspi*|*raspberry*) export STARSHIP_HOST_RASPI="$_starship_host" ;;
+  *mac*mini*) export STARSHIP_HOST_MINI="$_starship_host" ;;
+  *) export STARSHIP_HOST_DEFAULT="$_starship_host" ;;
+esac
+unset _starship_host _starship_identity
+
 eval "$(starship init zsh)"
 
 

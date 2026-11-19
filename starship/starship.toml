@@ -57,18 +57,18 @@ truncation_symbol = "…"
 always_show_remote = false
 
 [git_status]
-format = '( [$all_status$ahead_behind]($style)) '
+format = '([ $modified$staged$untracked$ahead_behind]($style))([ │ ]($style)[$conflicted](red)[$deleted$renamed$stashed]($style))'
 style = "#FFD23B"
-conflicted = "~${count}"
-ahead = "⇡${count}"
-behind = "⇣${count}"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
-untracked = "?${count}"
-stashed = "≡${count}"
-modified = "*${count}"
-staged = "+${count}"
-renamed = "»${count}"
-deleted = "✘${count}"
+conflicted = "~${count} "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇕⇡${ahead_count}⇣${behind_count} "
+untracked = "?${count} "
+stashed = "≡${count} "
+modified = "*${count} "
+staged = "+${count} "
+renamed = "»${count} "
+deleted = "✘${count} "
 
 [character]
 success_symbol = "[❯](bold #B6FF3B)"
